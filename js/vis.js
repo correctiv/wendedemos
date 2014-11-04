@@ -1,24 +1,58 @@
-function mauerfall() {
-    d3.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
-}
-function mauerreset() {
-    d3.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
-}
-function main() {
-    function dateToString(d) {return  d.getDate() + "-" + d.getMonth() + "-" + d.getFullYear()}
 
+var vis = {
+    self: this,
+    init: init,
+    showData : function(interval) {
+    var self = this;
 
+        if (interval == undefined) {interval = self.timeInterval;}
+    self.currentDate = interval[0];
+    var loc, currentdstr, markers;
+    var endDateStr = dateToString(interval[1]);
+    var i = setInterval(function(){
+        currentdstr = dateToString(self.currentDate);
+        markers = self.demos.filter(function(e) {
+            if (e.dstr == currentdstr ) {return e;}
+        });
+        // if more scripted events write a function to load stuff from json or other description file
+        if (currentdstr == dateToString(self.eventDates.mauerfall)) {self.mauerFall();}
 
-    var demos = false,
-    locations = false,
-    mapReady = false,
-    daysPerSecond = 7,   /// sets speed
-    timeInterval = [],
-    currentDate,
-    eventDates = {
+        console.log(currentdstr, markers.length,markers[0]);
+        // find string n sorted
+        // todo draw circles from markers events and update time line here
+        if (currentdstr == endDateStr) {clearInterval(i);}
+        self.currentDate.setDate(self.currentDate.getDate() + 1);
+    },  parseInt(1000/self.daysPerSecond));
+    },
+    containerId : "vis",
+    demos : false,
+    daysPerSecond : 7,   /// sets speed
+    timeInterval : [],
+    currentDate : null,
+    eventDates : {
         mauerfall: new Date("1989-11-09")
-    };
+    },
+    locations : false,
+    mapReady : false,
+    mauerFall : function() {
+        d3.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
+    },
+    mauerReset : function() {
+        d3.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
+    },
+    checkLoadState : function() {
+       // console.log("check:",this.demos, this.locations, this.mapReady);
+        if (this.demos && this.locations && this.mapReady) {
+            this.showData();
+        }
+    }
+};
 
+function dateToString(d) {return  d.getDate() + "-" + (d.getMonth() + 1) + "-" + d.getFullYear()}
+
+function init() {
+    // todo remove self where not needed
+    var self = this;
 
     d3.tsv("assets/data/demos.tsv", function(d) {
         var o = {
@@ -27,12 +61,12 @@ function main() {
             pBezirk: d.p_bezirk,
             lKey: d.p_bezirk + "--" + d.p_name,
             partMax: +d.part_max,
-            partMax: +d.part_min,
+            partMin: +d.part_min,
             partGuess: +d.part_guess,
-            ratioLoc: +d.ratio_ort,
-            ratioBez: +d.ratio_bezirk,
+            ratioLoc: +(d.ratio_ort.replace("%",""))/100,
+            ratioBez: +(d.ratio_bezirk.replace("%",""))/100,
             eTypeName: d.etype_name,
-            eTypeCat: d.etype_cat	,
+            eTypeCat: d.etype_cat,
             eOrgName: d.eorg_name,
             eOrgCat: d.eorg_cat,
             eOrgTheme: d.etheme,
@@ -49,58 +83,47 @@ function main() {
         rows = rows.sort(function(a, b) {
             return d3.ascending(a.date, b.date);
         });
-        demos = rows;
-        timeInterval = [demos[0].date, demos[demos.length-1].date];
-        console.log(timeInterval,rows[1]);
-        checkLoadState();
+        self.demos = rows;
+        // get first and last date for time interval / timeline
+        self.timeInterval = [self.demos[0].date, self.demos[self.demos.length-1].date];
+        console.log("EVENTS");
+        self.checkLoadState();
     });
 
     d3.tsv("assets/data/orte.tsv", function(d) {
-        return {
-            key: d.KEY,
+        var record = {
+            key   : d.KEY,
             pbezirk: d.Bezirk,
-            pbl14: d.BL2014,
-            pop89: +d.POP1989,
-            coords: [+d.lon, +d.lat]
+            pbl14  : d.BL2014,
+            pop89  : +d.POP1989,
+            coords : [+d.lon, +d.lat]
         };
+        return record;
+
     }, function(error, rows) {
         rows = rows.sort(function(a, b) {
             return d3.ascending(a.key, b.key);
         });
-        locations = rows;
-        console.log(rows[1]);
-        checkLoadState();
+        // todo make dictionary for locations
+        self.locations = rows;
+        console.log("ORTE");
+        self.checkLoadState();
     });
 
-    function checkLoadState() {
-        if (demos && locations && mapReady) {
-            console.log("all loaded");
-           showData();
+    function findKeyInSortedArr(arr, test, index) {
+        if (index == undefined) {index =0;}
+        var i = 0;
+        var l = arr.length;
+        while (i < l) {
+            if (arr[i][index] == test) {
+                return arr[i];
+            }
+            i++;
         }
     }
 
-    function showData(interval) {
-        if (interval == undefined) {interval = timeInterval;}
-        var currentDate = interval[0];
-        var endDateStr = dateToString(interval[1]);
-        var i = setInterval(function(){
-            var currentdstr = dateToString(currentDate);
-            var markers = demos.filter(function(e) {if (e.dstr == currentdstr ) {return e;}});
-
-            // if more scripted events write a function to load stuff from json or other description file
-            if (currentdstr == dateToString(eventDates.mauerfall)) {mauerfall();}
-            console.log(currentdstr, markers.length);
-
-            // todo draw circles from markers events and update time line here
-
-            if (currentdstr == endDateStr) {clearInterval(i);}
-            currentDate.setDate(currentDate.getDate() + 1);
-        },  parseInt(1000/daysPerSecond));
-    }
-
-    var containerId = "vis";
     var target = {
-            elem : document.getElementById(containerId),
+            elem : document.getElementById(self.containerId),
             ratio : 1.5,
             baseScale : 18000,
             baseSize : 1000
@@ -184,8 +207,9 @@ function main() {
             .attr("class", "staatsgrenze")
             .attr("d", path);
 
-        mapReady=true;
-        checkLoadState();
+        self.mapReady = true;
+        console.log("MAP RENDERED");
+        self.checkLoadState();
         /*
          svg.append("g")
          .attr("class", "bubble")
@@ -203,5 +227,3 @@ function main() {
          */
     });
 }
-
-
