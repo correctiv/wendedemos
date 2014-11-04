@@ -14,11 +14,11 @@ ogr2ogr
 
 
 Mögliche Breakpoints für Animation:
-Transit der Pragflüchtlinge durch Sachsen
-Erste Montagsdemo
-4.11. Kundgebung in Berlin
-9.11. Mauerfall (implementiert)
-4.12. Besetzung Der Stasizentralen
-  12. Streiks
-Kundgebungen mit Helmut Kohl
-freie Volkskammerwahl
+* Transit der Pragflüchtlinge durch Sachsen
+* Erste Montagsdemo
+* 4.11. Kundgebung in Berlin
+* 9.11. Mauerfall (implementiert)
+* 4.12. Besetzung Der Stasizentralen
+*   12. Streiks
+* Kundgebungen mit Helmut Kohl
+* freie Volkskammerwahl
