@@ -1,0 +1,92 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+#vis {
+    height: 100%;
+    background: #111;
+    overflow-x: hidden;
+    overflow-y: hidden;
+
+}
+.land {
+    fill: #222;
+}
+.land .BRD {
+    fill: #222;
+    opacity: 0.5;
+}
+.graticule {
+    fill: none;
+    stroke-width: 0.5px;
+    stroke: #333;
+}
+.bezirksgrenze {
+    fill: none;
+    stroke: #777;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-width: .5px;
+}
+
+.staatsgrenze {
+    fill: none;
+    stroke: #663333;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-width: 3px;
+}
+
+
+
+.staatsgrenzeoffen {
+    fill: none;
+    stroke: #777;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-width: 1px;
+    animation-name: flicker;
+    animation-duration: 1.3s;
+    animation-iteration-count: 1;
+
+}
+
+@keyframes flicker {
+    0% { stroke: hsl(15, 80%, 70%); }
+    3% { stroke: hsl(15, 0%, 0%); }
+    6% { stroke: hsl(15, 50%, 63%); }
+    8% { stroke: hsl(15, 0%, 0%); }
+    15% { stroke: hsl(15, 0%, 0%); }
+    17% { stroke: hsl(15, 50%, 63%); }
+    25% { stroke: hsl(15, 0%, 0%); }
+    10% { stroke: hsl(15, 0%, 90%); }
+    27% { stroke: hsl(15, 0%, 0%); }
+    30% { stroke: hsl(15, 50%, 63%); }
+    45% { stroke: hsl(15, 0%, 0%); }
+    95% { stroke: hsl(15, 0%, 0%); }
+    100% { stroke: hsl(15, 0%, 63%); }
+}
+
+
+.bubble {
+    fill: brown;
+    fill-opacity: .5;
+    stroke: #fff;
+    stroke-width: .5px;
+}
+
+.bubble :hover {
+    stroke: #000;
+}
+
+.legend circle {
+    fill: none;
+    stroke: #ccc;
+}
+
+.legend text {
+    fill: #777;
+    font: 10px sans-serif;
+    text-anchor: middle;
+}
