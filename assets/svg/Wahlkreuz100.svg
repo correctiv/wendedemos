@@ -1,0 +1,16 @@
+<svg
+xmlns:svg="http://www.w3.org/2000/svg"
+xmlns="http://www.w3.org/2000/svg"
+width="100"
+height="100"
+id="votecirclechecked">
+<circle
+style="fill:none;stroke:#000000;stroke-width:5"
+id="checkring"
+cx="50" cy="50" r="30"
+/>
+<path
+style="fill:#ff0000"
+d="M 8,81 C 19,68 28,55 37,47 28,36 27,35 17,22 21,15 19,14 25,2 35,17 39,25 47,36 57,25 62,22 76,7 80,17 85,24 85,24 71,36 70,36 60,49 69,60 72,66 79,76 75,88 72,97 70,95 64,88 58,73 47,60 33,73 26,84 14,97 12,91 13,90 8,81 Z"
+id="checkcross"/>
+</svg>

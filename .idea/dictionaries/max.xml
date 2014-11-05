@@ -1,9 +1,31 @@
 <component name="ProjectDictionaryState">
   <dictionary name="max">
     <words>
+      <w>bezirk</w>
+      <w>bezirke</w>
+      <w>bezirksgrenze</w>
+      <w>currentdate</w>
       <w>ddrbez</w>
+      <w>fieldname</w>
+      <w>fullscreen</w>
+      <w>hacky</w>
+      <w>keynames</w>
+      <w>latmax</w>
+      <w>latmin</w>
+      <w>lonmax</w>
+      <w>lonmin</w>
+      <w>mauer</w>
+      <w>minpart</w>
+      <w>mith</w>
       <w>ohnegf</w>
+      <w>orte</w>
+      <w>popbez</w>
+      <w>staatsgrenze</w>
+      <w>staatsgrenzeoffen</w>
+      <w>svgfblur</w>
+      <w>timeline</w>
       <w>topojson</w>
+      <w>urlname</w>
     </words>
   </dictionary>
 </component>

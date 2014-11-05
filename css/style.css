@@ -10,10 +10,29 @@ html, body {
     overflow-y: hidden;
 
 }
+
+.ui {
+    font-family: sans-serif;
+}
+
+#ui_currentdate {
+    position: absolute;
+    width: 200px;
+    height: 100px;
+    top: 20px;
+    left: 20px;
+    background-color: #222222;
+}
+
 .land {
     fill: #222;
 }
-.land .BRD {
+
+.land .highlight {
+    fill: #773333;
+}
+
+.land #BRD {
     fill: #222;
     opacity: 0.5;
 }
