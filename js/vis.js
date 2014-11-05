@@ -1,58 +1,52 @@
+/* globals d3: false */
+(function(window){
+'use strict';
 
-var vis = {
-    self: this,
-    init: init,
-    showData : function(interval) {
-    var self = this;
+function dateToString(d) {
+    return  d.getDate() + "-" + (d.getMonth() + 1) + "-" + d.getFullYear();
+}
 
-        if (interval == undefined) {interval = self.timeInterval;}
-    self.currentDate = interval[0];
-    var loc, currentdstr, markers;
-    var endDateStr = dateToString(interval[1]);
-    var i = setInterval(function(){
-        currentdstr = dateToString(self.currentDate);
-        markers = self.demos.filter(function(e) {
-            if (e.dstr == currentdstr ) {return e;}
-        });
-        // if more scripted events write a function to load stuff from json or other description file
-        if (currentdstr == dateToString(self.eventDates.mauerfall)) {self.mauerFall();}
-
-        console.log(currentdstr, markers.length,markers[0]);
-        // find string n sorted
-        // todo draw circles from markers events and update time line here
-        if (currentdstr == endDateStr) {clearInterval(i);}
-        self.currentDate.setDate(self.currentDate.getDate() + 1);
-    },  parseInt(1000/self.daysPerSecond));
-    },
-    containerId : "vis",
-    demos : false,
-    daysPerSecond : 7,   /// sets speed
-    timeInterval : [],
-    currentDate : null,
-    eventDates : {
-        mauerfall: new Date("1989-11-09")
-    },
-    locations : false,
-    mapReady : false,
-    mauerFall : function() {
-        d3.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
-    },
-    mauerReset : function() {
-        d3.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
-    },
-    checkLoadState : function() {
-       // console.log("check:",this.demos, this.locations, this.mapReady);
-        if (this.demos && this.locations && this.mapReady) {
-            this.showData();
+function findKeyInSortedArr(arr, test, index) {
+    if (index === undefined) {index =0;}
+    var i = 0;
+    var l = arr.length;
+    while (i < l) {
+        if (arr[i][index] == test) {
+            return arr[i];
         }
+        i++;
     }
+}
+
+function Vis(options){
+    options = options || {};
+    this.containerId = options.containerId || 'vis';
+    this.target = {
+        elem: document.getElementById(this.containerId),
+        ratio: 1.5,
+        baseScale: 18000,
+        baseSize: 1000
+    };
+    this.demos = false;
+    this.locations = false;
+
+    this.daysPerSecond = options.daysPerSecond || 7; // sets speed
+    this.timeInterval = [];
+    this.currentDate = null;
+    this.eventDates = {
+        mauerfall: new Date("1989-11-09")
+    };
+    this.mapReady = false;
+}
+
+Vis.prototype.init = function(){
+    this.loadData();
 };
 
-function dateToString(d) {return  d.getDate() + "-" + (d.getMonth() + 1) + "-" + d.getFullYear()}
-
-function init() {
-    // todo remove self where not needed
+Vis.prototype.loadData = function(){
     var self = this;
+
+    d3.json("assets/geo/ddr89.json", this.drawMap.bind(this));
 
     d3.tsv("assets/data/demos.tsv", function(d) {
         var o = {
@@ -78,70 +72,62 @@ function init() {
         o.month = o.date.getMonth();
         o.year = o.date.getFullYear();
         o.dstr = dateToString(o.date);
-            return o;
-    }, function(error, rows) {
-        rows = rows.sort(function(a, b) {
-            return d3.ascending(a.date, b.date);
-        });
-        self.demos = rows;
-        // get first and last date for time interval / timeline
-        self.timeInterval = [self.demos[0].date, self.demos[self.demos.length-1].date];
-        console.log("EVENTS");
-        self.checkLoadState();
-    });
+        return o;
+    }, this.demosLoaded.bind(this));
 
     d3.tsv("assets/data/orte.tsv", function(d) {
         var record = {
-            key   : d.KEY,
+            key: d.KEY,
             pbezirk: d.Bezirk,
-            pbl14  : d.BL2014,
-            pop89  : +d.POP1989,
-            coords : [+d.lon, +d.lat]
+            pbl14: d.BL2014,
+            pop89: +d.POP1989,
+            coords: [+d.lon, +d.lat]
         };
         return record;
 
-    }, function(error, rows) {
-        rows = rows.sort(function(a, b) {
-            return d3.ascending(a.key, b.key);
-        });
-        // todo make dictionary for locations
-        self.locations = rows;
-        console.log("ORTE");
-        self.checkLoadState();
-    });
+    }, this.locationsLoaded.bind(this));
+};
 
-    function findKeyInSortedArr(arr, test, index) {
-        if (index == undefined) {index =0;}
-        var i = 0;
-        var l = arr.length;
-        while (i < l) {
-            if (arr[i][index] == test) {
-                return arr[i];
-            }
-            i++;
-        }
+Vis.prototype.demosLoaded = function(error, rows) {
+    rows = rows.sort(function(a, b) {
+        return d3.ascending(a.date, b.date);
+    });
+    this.demos = rows;
+    // get first and last date for time interval / timeline
+    this.timeInterval = [this.demos[0].date, this.demos[this.demos.length-1].date];
+    console.log("EVENTS");
+    this.checkLoadState();
+};
+
+Vis.prototype.locationsLoaded = function(error, rows) {
+    rows = rows.sort(function(a, b) {
+        return d3.ascending(a.key, b.key);
+    });
+    // todo make dictionary for locations
+    this.locations = rows;
+    console.log("ORTE");
+    this.checkLoadState();
+};
+
+Vis.prototype.drawMap = function (error, ddr) {
+    if (error) {
+        return console.error(error);
     }
 
-    var target = {
-            elem : document.getElementById(self.containerId),
-            ratio : 1.5,
-            baseScale : 18000,
-            baseSize : 1000
-        };
-    var width = target.elem.offsetWidth,
-        height = target.elem.offsetHeight;
+    var width = this.target.elem.offsetWidth,
+        height = this.target.elem.offsetHeight;
     var dim = Math.min(width, height);
     var formatNumber = d3.format(",.0f");
 
     var projection = d3.geo.satellite()
         .distance(1.085)
-        .scale(target.baseScale * dim/target.baseSize)
+        .scale(this.target.baseScale * dim/this.target.baseSize)
         .rotate([-16.5, -38, -11])
         .center([0, 15])
         .tilt(-5)
         .translate([width/2, height/2])
         .clipAngle(Math.acos(1 / 1.09) * 180 / Math.PI - 1e-6)
-        .precision(.1);
+        .precision(0.1);
 
     var graticule = d3.geo.graticule()
         // [lonmin,latmin + offset for last], [lonmax, latmax + offset for last]
@@ -150,80 +136,136 @@ function init() {
 
     var path = d3.geo.path()
         .projection(projection);
-/*
+    /*
     var radius = d3.scale.sqrt()
-        .domain([0, 1e6])
-        .range([0, 15]);
-*/
-    var svg = d3.select("#vis").append("svg")
+      .domain([0, 1e6])
+      .range([0, 15]);
+    */
+    this.svg = d3.select("#" + this.containerId).append("svg")
         .attr("width", width)
         .attr("height", height);
 
 
-    svg.append("path")
+    this.svg.append("path")
         .datum(graticule)
         .attr("class", "graticule")
         .attr("d", path);
-/*
-    var legend = svg.append("g")
-        .attr("class", "legend")
-        .attr("transform", "translate(" + (width - 50) + "," + (height - 20) + ")")
-        .selectAll("g")
-        .data([1e6, 5e6, 1e7])
-        .enter().append("g");
+    /*
+    var legend = this.svg.append("g")
+      .attr("class", "legend")
+      .attr("transform", "translate(" + (width - 50) + "," + (height - 20) + ")")
+      .selectAll("g")
+      .data([1e6, 5e6, 1e7])
+      .enter().append("g");
 
     legend.append("circle")
-        .attr("cy", function (d) {
-            return -radius(d);
-        })
-        .attr("r", radius);
+      .attr("cy", function (d) {
+          return -radius(d);
+      })
+      .attr("r", radius);
 
     legend.append("text")
-        .attr("y", function (d) {
-            return -2 * radius(d);
-        })
-        .attr("dy", "1.3em")
-        .text(d3.format(".1s"));
-*/
-    d3.json("assets/geo/ddr89.json", function (error, ddr) {
-        if (error) return console.error(error);
+      .attr("y", function (d) {
+          return -2 * radius(d);
+      })
+      .attr("dy", "1.3em")
+      .text(d3.format(".1s"));
+    */
 
-        svg.append("g")
-            .attr("class", "land")
-            .selectAll('path')
-            .data(topojson.feature(ddr, ddr.objects.ddr89).features)
-            .enter().append("path")
-            .attr("class", function(d) { return  d.id == undefined ? "BRD" : "Bezirk " + d.id; })
-            .attr("d", path);
+    this.svg.append("g")
+        .attr("class", "land")
+        .selectAll('path')
+        .data(topojson.feature(ddr, ddr.objects.ddr89).features)
+        .enter().append("path")
+        .attr("class", function(d) { return  d.id === undefined ? "BRD" : "Bezirk " + d.id; })
+        .attr("d", path);
 
-// Bezirke
-        svg.append("path")
-            .datum(topojson.mesh(ddr, ddr.objects.ddr89, function (a, b) { return a !== b && a.id !== undefined && b.id !== undefined; }))
-            .attr("class", "bezirksgrenze")
-            .attr("d", path);
-// Staatsgrenze
-        svg.append("path")
-            .datum(topojson.mesh(ddr, ddr.objects.ddr89, function (a, b) { return a !== b && (a.id == undefined || b.id == undefined); }))
-            .attr("class", "staatsgrenze")
-            .attr("d", path);
+    // Bezirke
+    this.svg.append("path")
+        .datum(topojson.mesh(ddr, ddr.objects.ddr89, function (a, b) { return a !== b && a.id !== undefined && b.id !== undefined; }))
+        .attr("class", "bezirksgrenze")
+        .attr("d", path);
+    // Staatsgrenze
+    this.svg.append("path")
+        .datum(topojson.mesh(ddr, ddr.objects.ddr89, function (a, b) { return a !== b && (a.id === undefined || b.id === undefined); }))
+        .attr("class", "staatsgrenze")
+        .attr("d", path);
 
-        self.mapReady = true;
-        console.log("MAP RENDERED");
-        self.checkLoadState();
-        /*
-         svg.append("g")
-         .attr("class", "bubble")
-         .selectAll("circle")
-         .data(topojson.feature(ddr, ddr.objects.VG250_DDRBEZ89_OHNEGF).features
-         .sort(function(a, b) { return b.properties.population - a.properties.population; }))
-         .enter().append("circle")
-         .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
-         .attr("r", function(d) { return radius(d.properties.population); })
-         .append("title")
-         .text(function(d) {
-         return d.properties.name
-         + "\nPopulation " + formatNumber(d.properties.population);
-         });
-         */
+
+    this.mapReady = true;
+    console.log("MAP RENDERED");
+    this.checkLoadState();
+    /*
+   this.svg.append("g")
+       .attr("class", "bubble")
+       .selectAll("circle")
+       .data(topojson.feature(ddr, ddr.objects.VG250_DDRBEZ89_OHNEGF).features
+       .sort(function(a, b) { return b.properties.population - a.properties.population; }))
+       .enter().append("circle")
+       .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
+       .attr("r", function(d) { return radius(d.properties.population); })
+       .append("title")
+       .text(function(d) {
+       return d.properties.name
+       + "\nPopulation " + formatNumber(d.properties.population);
+       });
+   */
+};
+
+Vis.prototype.showInterval = function(interval) {
+    var self = this;
+    if (interval === undefined) {
+      interval = this.timeInterval;
+    }
+    this.currentDate = interval[0];
+    var endDateStr = dateToString(interval[1]);
+
+    this.timer = window.setInterval(function(){
+        var currentdstr = dateToString(self.currentDate);
+
+        self.showDate(currentdstr);
+
+        if (currentdstr === endDateStr) {
+            window.clearInterval(self.timer);
+        }
+
+        self.currentDate.setDate(self.currentDate.getDate() + 1);
+    }, parseInt(1000 / self.daysPerSecond));
+};
+
+Vis.prototype.showDate = function(date){
+    var markers = this.demos.filter(function(e) {
+        if (e.dstr === date) {
+            return e;
+        }
     });
-}
+
+    // if more scripted events write a function to load stuff from json or other description file
+    if (date === dateToString(this.eventDates.mauerfall)) {
+        this.mauerFall();
+    }
+
+    console.log(date, markers.length, markers[0]);
+
+    // find string n sorted
+    // todo draw circles from markers events and update time line here
+};
+
+Vis.prototype.mauerFall = function() {
+    this.svg.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
+};
+
+Vis.prototype.mauerReset = function() {
+    this.svg.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
+};
+
+Vis.prototype.checkLoadState = function() {
+   // console.log("check:",this.demos, this.locations, this.mapReady);
+    if (this.demos && this.locations && this.mapReady) {
+        this.showInterval();
+    }
+};
+
+window.Vis = Vis;
+
+}(window));
