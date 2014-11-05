@@ -6,18 +6,6 @@ function dateToString(d) {
     return  d.getDate() + "-" + (d.getMonth() + 1) + "-" + d.getFullYear();
 }
 
-function findKeyInSortedArr(arr, test, index) {
-    if (index === undefined) {index =0;}
-    var i = 0;
-    var l = arr.length;
-    while (i < l) {
-        if (arr[i][index] == test) {
-            return arr[i];
-        }
-        i++;
-    }
-}
-
 function Vis(options){
     options = options || {};
     this.containerId = options.containerId || 'vis';
@@ -44,8 +32,6 @@ Vis.prototype.init = function(){
 };
 
 Vis.prototype.loadData = function(){
-    var self = this;
-
     d3.json("assets/geo/ddr89.json", this.drawMap.bind(this));
 
     d3.tsv("assets/data/demos.tsv", function(d) {
@@ -104,8 +90,12 @@ Vis.prototype.locationsLoaded = function(error, rows) {
         return d3.ascending(a.key, b.key);
     });
     // todo make dictionary for locations
-    this.locations = rows;
-    console.log("ORTE");
+    var locations = {};
+    rows.forEach(function(r){
+        locations[r.key] = r;
+    });
+    this.locations = locations
+    console.log("ORTE", this.locations);
     this.checkLoadState();
 };
 
@@ -246,6 +236,7 @@ Vis.prototype.showDate = function(date){
     }
 
     console.log(date, markers.length, markers[0]);
+    // Get location here: this.locations[markers[0].lKey])
 
     // find string n sorted
     // todo draw circles from markers events and update time line here
