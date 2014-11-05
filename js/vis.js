@@ -280,7 +280,7 @@ Vis.prototype.mauerReset = function() {
 Vis.prototype.checkLoadState = function() {
     if (this.debug) {
         var o = this.locations;
-        console.log("check (demos,locations,map):", this.demos.length, Object.keys(o).length, this.mapReady);
+        console.log("check (demos,locations,map):", this.demos.length, o ? Object.keys(o).length : false, this.mapReady);
     }
     if (this.demos && this.locations && this.mapReady) {
         this.showInterval();

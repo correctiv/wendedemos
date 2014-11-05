@@ -6,12 +6,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0873d0d7-3921-4082-9d28-f47275baf2c6" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/css/style.css" afterPath="$PROJECT_DIR$/css/style.css" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/vis.js" afterPath="$PROJECT_DIR$/js/vis.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/wendedemos.iml" afterPath="$PROJECT_DIR$/.idea/wendedemos.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="wendedemos.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -34,13 +29,13 @@
     <favorites_list name="wendedemos" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="vertical" split-proportion="0.46907818">
+    <splitter split-orientation="vertical" split-proportion="0.2672112">
       <split-first>
         <leaf>
           <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/index.html">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.492163" vertical-offset="47" max-vertical-offset="374">
+                <state vertical-scroll-proportion="1.0753424" vertical-offset="47" max-vertical-offset="374">
                   <caret line="12" column="27" selection-start-line="12" selection-start-column="27" selection-end-line="12" selection-end-column="27" />
                   <folding />
                 </state>
@@ -94,8 +89,8 @@
           <file leaf-file-name="vis.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/js/vis.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.20316623" vertical-offset="1640" max-vertical-offset="5066">
-                  <caret line="101" column="26" selection-start-line="101" selection-start-column="26" selection-end-line="101" selection-end-column="26" />
+                <state vertical-scroll-proportion="0.817029" vertical-offset="4343" max-vertical-offset="5066">
+                  <caret line="282" column="71" selection-start-line="282" selection-start-column="71" selection-end-line="282" selection-end-column="71" />
                   <folding />
                 </state>
               </provider>
@@ -131,8 +126,7 @@
     <scope name="1" pattern="file[wendedemos]:js/*&amp;&amp;!file[wendedemos]:js/lib/*||file:index.html" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="984" />
-    <option name="y" value="26" />
+    <option name="x" value="1073" />
     <option name="width" value="960" />
     <option name="height" value="966" />
   </component>
@@ -340,7 +334,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="984" y="26" width="960" height="966" extended-state="0" />
+    <frame x="1073" y="0" width="960" height="966" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -605,7 +599,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.492163" vertical-offset="47" max-vertical-offset="374">
+        <state vertical-scroll-proportion="1.0753424" vertical-offset="47" max-vertical-offset="374">
           <caret line="12" column="27" selection-start-line="12" selection-start-column="27" selection-end-line="12" selection-end-column="27" />
           <folding />
         </state>
@@ -613,8 +607,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/js/vis.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.20316623" vertical-offset="1640" max-vertical-offset="5066">
-          <caret line="101" column="26" selection-start-line="101" selection-start-column="26" selection-end-line="101" selection-end-column="26" />
+        <state vertical-scroll-proportion="0.817029" vertical-offset="4343" max-vertical-offset="5066">
+          <caret line="282" column="71" selection-start-line="282" selection-start-column="71" selection-end-line="282" selection-end-column="71" />
           <folding />
         </state>
       </provider>
