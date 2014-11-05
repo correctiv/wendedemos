@@ -17,17 +17,20 @@ html, body {
     fill: #222;
     opacity: 0.5;
 }
+
 .graticule {
     fill: none;
-    stroke-width: 0.5px;
-    stroke: #333;
+    stroke-width: 0.08px;
+    stroke: #fff;
+
 }
+
 .bezirksgrenze {
     fill: none;
     stroke: #777;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-    stroke-width: .5px;
+    stroke-linejoin: bevel;
+    stroke-linecap: bevel;
+    stroke-width: .25px;
 }
 
 .staatsgrenze {
@@ -37,8 +40,6 @@ html, body {
     stroke-linecap: round;
     stroke-width: 3px;
 }
-
-
 
 .staatsgrenzeoffen {
     fill: none;

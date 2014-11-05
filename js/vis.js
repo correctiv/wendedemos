@@ -8,6 +8,7 @@ function dateToString(d) {
 
 function Vis(options){
     options = options || {};
+    this.debug =  options.debug || false;
     this.containerId = options.containerId || 'vis';
     this.target = {
         elem: document.getElementById(this.containerId),
@@ -19,7 +20,8 @@ function Vis(options){
     this.locations = false;
 
     this.daysPerSecond = options.daysPerSecond || 7; // sets speed
-    this.timeInterval = [];
+    this.globalTimeInterval = [];
+    this.currentTimeInterval = [];
     this.currentDate = null;
     this.eventDates = {
         mauerfall: new Date("1989-11-09")
@@ -62,26 +64,27 @@ Vis.prototype.loadData = function(){
     }, this.demosLoaded.bind(this));
 
     d3.tsv("assets/data/orte.tsv", function(d) {
-        var record = {
+        return {
             key: d.KEY,
             pbezirk: d.Bezirk,
             pbl14: d.BL2014,
             pop89: +d.POP1989,
             coords: [+d.lon, +d.lat]
         };
-        return record;
-
     }, this.locationsLoaded.bind(this));
 };
 
 Vis.prototype.demosLoaded = function(error, rows) {
+    // sort events by date
     rows = rows.sort(function(a, b) {
         return d3.ascending(a.date, b.date);
     });
     this.demos = rows;
     // get first and last date for time interval / timeline
-    this.timeInterval = [this.demos[0].date, this.demos[this.demos.length-1].date];
-    console.log("EVENTS");
+    // set global time interval
+    this.globalTimeInterval = [this.demos[0].date, this.demos[this.demos.length-1].date];
+    this.currentTimeInterval = this.globalTimeInterval;
+    if (this.debug) {console.log("demos loaded");}
     this.checkLoadState();
 };
 
@@ -95,7 +98,7 @@ Vis.prototype.locationsLoaded = function(error, rows) {
         locations[r.key] = r;
     });
     this.locations = locations;
-    console.log("ORTE", this.locations);
+    if (this.debug) {console.log("locations loaded");}
     this.checkLoadState();
 };
 
@@ -135,11 +138,35 @@ Vis.prototype.drawMap = function (error, ddr) {
         .attr("width", width)
         .attr("height", height);
 
+    // svg filters have to be inline
+    // support of svg-filters from css is poor across browsers
+
+    this.filters = {};
+    this.filters.blur = this.svg.append("filter")
+        .attr("id", "svgfblur");
+
+    this.filters.blur.append("feGaussianBlur")
+        .attr("stdDeviation",2);
+
+    // end filters
+
+
+    // some inline svg styling happening here
+    // breaks in chrome fullscreen
+    this.svg.append("path")
+        .datum(graticule)
+        .attr("class", "graticule")
+        .style("filter", "url(#svgfblur)")
+        .style("stroke", "yellow")
+        .style("stroke-width", 0.2)
+        .style("opacity", 0.5)
+        .attr("d", path);
 
     this.svg.append("path")
         .datum(graticule)
         .attr("class", "graticule")
         .attr("d", path);
+
     /*
     var legend = this.svg.append("g")
       .attr("class", "legend")
@@ -183,7 +210,7 @@ Vis.prototype.drawMap = function (error, ddr) {
 
 
     this.mapReady = true;
-    console.log("MAP RENDERED");
+    if (this.debug) {console.log("MAP RENDERED")};
     this.checkLoadState();
     /*
    this.svg.append("g")
@@ -205,7 +232,7 @@ Vis.prototype.drawMap = function (error, ddr) {
 Vis.prototype.showInterval = function(interval) {
     var self = this;
     if (interval === undefined) {
-      interval = this.timeInterval;
+      interval = this.currentTimeInterval;
     }
     this.currentDate = interval[0];
     var endDateStr = dateToString(interval[1]);
@@ -235,7 +262,7 @@ Vis.prototype.showDate = function(date){
         this.mauerFall();
     }
 
-    console.log(date, markers.length, markers[0]);
+    //console.log(date, markers.length, markers[0]);
     // Get location here: this.locations[markers[0].lKey])
 
     // find string n sorted
@@ -251,7 +278,10 @@ Vis.prototype.mauerReset = function() {
 };
 
 Vis.prototype.checkLoadState = function() {
-   // console.log("check:",this.demos, this.locations, this.mapReady);
+    if (this.debug) {
+        var o = this.locations;
+        console.log("check (demos,locations,map):", this.demos.length, Object.keys(o).length, this.mapReady);
+    }
     if (this.demos && this.locations && this.mapReady) {
         this.showInterval();
     }
