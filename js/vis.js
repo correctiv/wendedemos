@@ -94,7 +94,7 @@ Vis.prototype.locationsLoaded = function(error, rows) {
     rows.forEach(function(r){
         locations[r.key] = r;
     });
-    this.locations = locations
+    this.locations = locations;
     console.log("ORTE", this.locations);
     this.checkLoadState();
 };
