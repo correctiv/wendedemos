@@ -36,7 +36,7 @@
         // set defaults
         this.options.locale = this.options.locale || "de";
         this.options.minPart = this.options.minPart || 50;
-        this.options.flashColor = this.options.flashColor || "hsl(54,100%,90%)";
+        this.options.flashColor = this.options.flashColor || "hsl(54,30%,50%)";
         this.options.limitLoops = this.options.limitLoops === undefined ? 500 : this.options.limitLoops;  //catch runaway intervals and debugging, hard limit of 500
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
@@ -69,7 +69,10 @@
             baseScale: 18000,
             baseSize: 1000
         };
-        this.scales = {};
+        this.scales = {
+            rel : d3.scale.linear().domain([0, 0.5]).range([0.1, 1])
+
+    };
 
     this.demos = false;
         this.locations = false;
@@ -210,7 +213,7 @@
                     d.popbez89 = r.popbez89;
                     d.ratio = d.partGuess/ d.pop89;
                     d.ratioBez = d.partGuess/ d.popbez89;
-                    delete d.pKey; // optional, but no longer needed
+                    d.placekey = d.pKey;
                 }
                 catch(err) {console.error("key in locations",d.pKey, l[d.pKey],err);}
                 //clean up unneeded fields here and join coords by location key;
@@ -309,6 +312,8 @@
 
         this.markerLayer = this.svg.append("g")
             .attr("class", "markers");
+        this.labelLayer = this.svg.append("g")
+            .attr("class", "labels");
 
         this.mapReady = true;
         if (this.debug) {console.log("Map rendered")}
@@ -328,8 +333,6 @@
             }
         });
     };
-
-
 
     Vis.prototype.showInterval = function(arr) {
         var self = this;
@@ -377,14 +380,14 @@
             if (i >= limit && limit) {
                 if (self.debug) {console.log("exit interval loop based on limit", limit, i);}
                 window.clearInterval(self.timer);
-            } // clear on limit
-            // increment current date by one day
+            }
             i += 1;
         }, parseInt(1000 / self.options.daysPerSecond));
     };
 
     Vis.prototype.renderCircle = function(d) {
         var self = this;
+
         self.markerLayer.append("circle")
             .attr({
                 r : self.scales.rPop(d.partGuess),
@@ -393,20 +396,23 @@
                 fill : "lime",
                 opacity : 1
             })
+            // todo insert custom timer for less load
             .transition().ease("linear").duration(2500)
-            .attr({r: self.scales.rPop(d.partGuess*0.8)})
+            //.attr({r: self.scales.rPop(d.partGuess*0.8)})
             .style({opacity : 0}).remove();
-            //.append("text").text(d.placename + d.partGuess)
     };
 
 
     Vis.prototype.renderMarkers = function(arr){
+        this.drawStack = this.drawStack || 0;
+        this.drawStack += arr.length;
         var self = this;
         //console.log (arr.length, arr[0].dateString, arr[0].placename);
         arr.forEach(function(d) {
-            setTimeout(function() {
+            // todo figure out timeout asynchronity
+          //  setTimeout(function() {
                 self.renderCircle(d);
-            }, Math.random() * 50)
+         //   }, Math.random() * 3)
         });
     };
 
@@ -419,6 +425,7 @@
         this.renderMarkers(markers, this.markerLayer);
         // color bezirke based on participation ratio
         // get base color from css inits;
+        // todo fix unexpected clipping for brightness behavior;
         this.styles.landBaseColor = this.styles.landBaseColor ||
         land.style('fill');
         var baseColor =  this.styles.landBaseColor;
@@ -430,23 +437,28 @@
             var r = bezRatios[d].ratio;
             // trailing brightness for fallback color
             rTrail[d] = rTrail[d] === undefined ? r :
-            rTrail[d] * (1 - this.options.trailFallOff) + r;
+            rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
             var id = "#" + d;
             var b = land.select(id);
-            setTimeout(function(){
+          //  setTimeout(function(){
             b   //.attr({opacity:0}).transition.delay(Math.random * 30)
-            .style({
-                fill : d3.hsl(flashBaseC).brighter(r * 3),
-                opacity : 0.3
-            })
-                .transition()
-                    //.transition.duration(400)
-                    .style({
-                    fill: d3.hsl(baseColor).brighter(rTrail[d] * 3),
+                .style({
+                    fill : d3.hsl(flashBaseC),
+                    //.brighter(this.scales.rel(r)*0.2),
+                    opacity : 0.5
+                })
+                .transition().duration(800)
+                .style({
+                    fill: d3.hsl(baseColor).brighter(
+                        0.05
+                        // (this.scales.rel(rTrail[d]) > 0.2)? 0.2 : this.scales.rel(rTrail[d]);
+                    ),
                     opacity: 1
-                }
-            );
-            }, Math.random * 50);
+                })
+        //);
+            // TODO get timeout asynchronously working,
+            // otherwise too much delay
+            //  }, Math.random * 50);
         }
         // ---
         // draw circles
@@ -520,6 +532,28 @@
                         }
                     }
                 });
+                this.groups.totalsByPlace = this.groupBy(this.demos, "placeKey", {
+                    tmp : true,
+                    rollUpF : function(d) {
+                        return {
+                            "length": d.length,
+                            "name": d.placename,
+                            "pCoords": d.pCoords,
+                            "total": d3.sum(d, function(d) {
+                                return d.partGuess;
+                            }),
+                            "totalRel": d3.sum(d, function(d) {
+                                return d.ratio;
+                            })
+                        }
+                    }
+                });
+this.labelLayer.data(this.groups.totalsByPlace).enter().append("text")
+    .attr({
+        text : function(d) {return d.name;},
+        x : function(d) {return d.pCoords[0];},
+        y : function(d) {return d.pCoords[1];}
+        });
                 if (this.debug) {console.log(" -- start animation");}
                 this.showInterval();
                 break;
