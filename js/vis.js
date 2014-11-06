@@ -335,6 +335,15 @@
         this.labelLayer = this.svg.append("g")
             .attr("class", "labels");
 
+        this.legend = this.svg.append("g")
+            .attr("class", "legend");
+        this.legend.append("circle")
+            .attr({
+                cx: width/5,
+                cy: height * 1/3,
+                r : this.scales.rPop(100000)
+            });
+
         this.mapReady = true;
         if (this.debug) {
             console.log("Map rendered");
@@ -573,6 +582,8 @@
             //console.log(this.groups.totalsByPlace[1]);
             // debugger;
             var textNodes = d3.select("svg").select(".labels");
+            var dots = textNodes.append("g").attr("class","dots");
+            var labels = textNodes.append("g").attr("class","labeltext");
             var o = this.groups.totalsByPlace;
             for(var d in o) {
                 var s = {anchor: "start"};
@@ -594,37 +605,32 @@
                 if (alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
 
                 switch (true) {
-                    case (p < 10000) :
-                        s = {r: 0.7, showLabel: false};
-                        break;
-                    case (p < 50000) :
-                        s = {r: 1, showLabel: false};
-                        break;
-                    case (p < 100000) :
-                        s = {r: 1.5, showLabel: true};
-                        break;
-                    default :
-                        s = {r: 3, showLabel: true};
-                        break;
+                    case (p < 10000) :  s.class = "smaller10k";s.r = 1;s.size = 6;s.showLabel= false; break;
+                    case (p < 50000) :  s.class = "pl10kto50k";s.r = 2;s.size = 7;s.showLabel= false; break;
+                    case (p < 100000) : s.class = "pl50kto100k";s.r = 3;s.size = 8;s.showLabel= true; break;
+                    case (p < 300000) : s.class = "pl100kto300k";s.r = 4;s.size = 10;s.showLabel= true; break;
+                    default :           s.class = "pl300kplus";s.r = 4;s.size = 12;s.showLabel= true; break;
                 }
-                textNodes.append("circle")
+                dots.append("circle")
                     .attr({
                         cx: o[d].pCoords[0],
                         cy: o[d].pCoords[1],
                         r: s.r
                     })
-                console.log(o[d]);
+                //console.log(o[d]);
                 if (s.showLabel) {
-                    textNodes.append("text")
-                        .attr("text-anchor", s.align)
+                    console.log(s.anchor);
+                    labels.append("text")
+                        .attr({"class": s.class})
+                        .attr({"text-anchor": s.anchor})
                         .attr({
                             x: o[d].pCoords[0] ,
                             y: o[d].pCoords[1] - 5
                         })
                         .style({
-                            "font-size": "11px",
+                            "font-size": s.size + "px",
                             "fill": "white",
-                            "font-family": "sans-serif",
+                            "font-family": "sans-serif"
                         })
                         .text(n);
                 }
