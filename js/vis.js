@@ -417,11 +417,11 @@
             self.play();
         };
         this.ui.rewind.on('click', rewind);
-        this.ui.rewind.on('touch', rewind);
+        this.ui.rewind.on('touchstart', rewind);
         this.ui.play.on('click', playPause);
-        this.ui.play.on('touch', playPause);
+        this.ui.play.on('touchstart', playPause);
         this.ui.fast_fwd.on('click', fastForward);
-        this.ui.fast_fwd.on('touch', fastForward);
+        this.ui.fast_fwd.on('touchstart', fastForward);
     };
 
     Vis.prototype.updateUI = function() {
