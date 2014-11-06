@@ -8,31 +8,7 @@
          return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
 
     }
-/*
-    function fadeCircles() {
-        var m = d3.select(".markers");
-        var faint = m.selectAll("circle").filter(
-            function(a) {
-                if (a.style("opacity") < 0.1) {
-                    return a;
-                }
-            }
-        );
-        faint.remove();
-        m.selectAll("circle")
-            .call(
-            function(a) {
-                console.log(a);
-              var s =  a.style("opacity");
-                if (s < 0.05) {delete m[a]}
-                a.style("opacity", s * 0.99);
-       // if (d[0] !== undefined) {
-    })
-            window.requestAnimationFrame(fadeCircles);
-    //}
-}
 
-*/
     function dateToLocale(d,locale) {
         var supported = ["de"];
         var l = (supported.indexOf(locale) > -1) ? locale : supported[0];
@@ -70,6 +46,7 @@
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
         this.options.loop = this.options.loop === undefined ? false : this.options.loop;
         this.options.containerId = this.options.containerId || 'vis';
+        this.options.maxRadiusRatio = this.options.maxRadiusRatio || 0.08;
         this.debug =  this.options.debug || false;
         this.eventDates = [
             // add more timed event here if needed
@@ -92,9 +69,7 @@
             baseScale: 18000,
             baseSize: 1000
         };
-        this.scales = {
-            rPop : d3.scale.sqrt().domain([0, 5000]).range([0, 20])
-        };
+        this.scales = {};
 
     this.demos = false;
         this.locations = false;
@@ -248,6 +223,7 @@
         var width = this.target.elem.offsetWidth,
             height = this.target.elem.offsetHeight;
         var dim = Math.min(width, height);
+        this.scales.rPop = d3.scale.sqrt().domain([100, 100000]).range([2, dim*this.options.maxRadiusRatio])
         var formatNumber = d3.format(",.0f");
         var smallFloat = 1.0e-6;
         this.projection = d3.geo.satellite()
@@ -417,7 +393,9 @@
                 fill : "lime",
                 opacity : 1
             })
-            .transition().ease("circle").duration(1000).attr({r : 1, opacity : 0}).remove();
+            .transition().ease("linear").duration(2500)
+            .attr({r: self.scales.rPop(d.partGuess*0.8)})
+            .style({opacity : 0}).remove();
             //.append("text").text(d.placename + d.partGuess)
     };
 
