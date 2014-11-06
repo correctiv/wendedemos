@@ -1,6 +1,22 @@
 Demonstrationen vom 13. August 1989 bis 30. April 1990 in der DDR
 ==========
 
+## iFrame Embed
+
+Folgender iFrame-Code kann zum Embed benutzt werden
+
+    <iframe src="https://correctiv.github.io/wendedemos/" style="width:400px;height:400px;" frameborder="0"></iframe>
+
+Folgende URL-flags stehen zur Verfügung:
+
+- `autoplay`: spielt die Animation sofort ab
+- `flash`: flasht die Bezirke bei Aktionen
+- `ticker`: lässt einen Ticker der Demomeldungen im Hintergrund laufen
+
+Beispiel-URL: https://correctiv.github.io/wendedemos/?autoplay&flash&ticker
+
+## Dokumentation
+
 Datenquelle:
 * http://www.archiv-buergerbewegung.de/index.php/demonstrationen
 
