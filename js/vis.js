@@ -1,7 +1,9 @@
 /* globals d3: false */
 (function(window){
     'use strict';
+
     var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
+
     function dateToString(d) {
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
         // return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
@@ -30,6 +32,7 @@
             year: d.getFullYear()
         };
     }
+
     function Vis(options){
         var self = this;
         this.options = options || {};
@@ -87,10 +90,25 @@
         };
         this.currentDate = null;
         this.mapReady = false;
-
     }
 
     Vis.prototype.init = function(){
+        this.width = this.target.elem.offsetWidth;
+        this.height = this.target.elem.offsetHeight;
+
+        this.dim = Math.min(this.width, this.height);
+        var smallFloat = 1.0e-6;
+
+        this.projection = d3.geo.satellite()
+            .distance(1.085)
+            .scale(this.target.baseScale * this.dim/this.target.baseSize)
+            .rotate([-16.5, -38, -11])
+            .center([0, 15])
+            .tilt(-5)
+            .translate([this.width / 2, this.height / 2])
+            .clipAngle(Math.acos(1 / 1.09) * 180 / Math.PI - smallFloat)
+            .precision(0.1);
+
         this.loadData();
     };
     Vis.prototype.loadData = function(){
@@ -234,23 +252,12 @@
         if (error) {
             return console.error(error);
         }
-        var width = this.target.elem.offsetWidth,
-            height = this.target.elem.offsetHeight;
-        var dim = Math.min(width, height);
+
         this.scales.rPop = d3.scale.sqrt()
             .domain([100, 100000])
-            .range([2, dim * this.options.maxRadiusRatio]);
+            .range([2, this.dim * this.options.maxRadiusRatio]);
         var formatNumber = d3.format(",.0f");
         var smallFloat = 1.0e-6;
-        this.projection = d3.geo.satellite()
-            .distance(1.085)
-            .scale(this.target.baseScale * dim/this.target.baseSize)
-            .rotate([-16.5, -38, -11])
-            .center([0, 15])
-            .tilt(-5)
-            .translate([width/2, height/2])
-            .clipAngle(Math.acos(1 / 1.09) * 180 / Math.PI - smallFloat)
-            .precision(0.1);
         var projection = this.projection;
         var graticule = d3.geo.graticule()
             // [lonmin,latmin], [lonmax + offset for last, latmax + offset for last]
@@ -272,8 +279,8 @@
         this.ui.datetext.year = this.ui.datetext.append("span").classed("year",true);
 
         this.svg = container.append("svg")
-            .attr("width", width)
-            .attr("height", height);
+            .attr("width", this.width)
+            .attr("height", this.height);
 
         // svg filters have to be inline
         // support of svg-filters from css is poor across browsers
