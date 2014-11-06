@@ -183,6 +183,8 @@
             this.options.forcedEndDate = new Date(this.options.forcedEndDate);
             this.currentInterval.dates[1] = this.options.forcedEndDate;
         }
+        // initialize current date
+        this.currentDate = new Date(this.currentInterval.dates[0]);
         if (this.debug) {console.log("demos loaded");}
         this.checkLoadState();
     };
