@@ -145,11 +145,12 @@ html, body {
     stroke: #ccc;
 }
 
-.tickerg text {
-    fill: green;
+.ticker text {
+    fill: yellow;
     font-weight: 800;
-    font: 10px monospace;
+    font: 11px monospace;
     text-anchor: middle;
+    opacity: 0.2;
 }
 
 .legend text {

@@ -44,7 +44,7 @@
         this.options.limitLoops = this.options.limitLoops === undefined ? 500 : this.options.limitLoops;  //catch runaway intervals and debugging, hard limit of 500
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
-
+        this.options.tickerEnabled = this.options.tickerEnabled || false;  // override start date
         this.options.daysPerSecond = this.options.daysPerSecond || 4;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
@@ -312,6 +312,8 @@
         grid.append("path")
             .datum(graticule)
             .attr("d", path);
+        this.tickerLayer = this.svg.append("g")
+            .attr("class", "ticker");
 
         this.svg.append("g")
             .attr("class", "land")
@@ -334,13 +336,12 @@
             .attr("class", "staatsgrenze")
             .attr("d", path);
 
+
         this.labelLayer = this.svg.append("g")
             .attr("class", "labels");
         this.markerLayer = this.svg.append("g")
             .attr("class", "markers");
 
-        this.tickerLayer = this.svg.append("g")
-            .attr("class", "ticker");
 
         var legendOffset = [this.width * 4/5,this.height * 1/6];
         var maxR = this.scales.rPop(100000);
@@ -433,18 +434,18 @@
     Vis.prototype.renderEvents = function(d) {
         var self = this;
         var pos = {
-            x : [this.width * 1.2 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
-            y : this.height/4 * Math.random()
+            x : [this.width * 1.5 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
+            y : this.height * 0.9 * Math.random()
         };
-        if ( d.eRemarks !== "") {
-            var tg = self.tickerLayer.append("g");
-            tg.attr({"class": "tickerg"});
-            tg.append("text").attr({
+        if ( d.eRemarks !== "" && this.height > 700 && this.options.tickerEnabled) {
+            self.tickerLayer.append("text").attr({
                 "text-anchor": "start",
                 x: pos.x[0],
                 y: pos.y
-            }).text("+++" + d.placeName + ( + d.dateString) + d.partGuess + d.eRemarks + "+++")
-                .transition().ease("linear").duration(15000)
+            }).text(
+                "+++ " + d.placeName + " (" + dateToString(d.date) + ") " +
+            d.partGuess + " Teilnehmer + " + d.eRemarks + " +++")
+                .transition().ease("linear").duration(25000)
                 .attr({x: pos.x[1]}).remove();
         }
         self.markerLayer.append("circle")
