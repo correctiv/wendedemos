@@ -56,8 +56,11 @@ a, a:visited {
 .controls {
   padding-bottom: 0.5em;
 }
+circle.smaller10k , circle.pl10kto50k, circle.pl50kto100k {
+    opacity : 0.5;
+}
 
-circle.pl300kplus {
+circle.pl300kto700k{
     fill: #330606;
     stroke: black;
     stroke-width: 1px;
