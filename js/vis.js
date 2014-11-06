@@ -411,7 +411,6 @@
             } else {
                 self.play();
             }
-            self.playing = !self.playing;
         };
         var fastForward = function() {
             if (self.options.daysPerSecond === self.options.defaultDaysPerSecond) {
@@ -607,12 +606,14 @@
     };
 
     Vis.prototype.pause = function() {
+        this.playing = false;
         this.fastFwdOff();
         window.clearInterval(this.timer);
         this.ui.play.classed('icon-play', true).classed('icon-pause', false);
     };
 
     Vis.prototype.play = function() {
+        this.playing = true;
         var tmp = [this.currentDate, this.currentInterval.dates[1]];
         window.clearInterval(this.timer);
         this.showInterval(tmp);
