@@ -1,23 +1,56 @@
 /* globals d3: false */
 (function(window){
     'use strict';
+    var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
     function dateToString(d) {
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
         return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
+    }
+    function dateToLocale(d,locale) {
+        var supported = ["de"];
+        var l = (supported.indexOf(locale) > -1) ? locale : supported[0];
+        var monthNames = {
+            de:["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"        ]
+        };
+        var weekdayNames = {
+            de : ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Sonnabend"]
+        };
+        var dow = d.getDay();
+        var month = d.getMonth();
+        return  {
+                dayOfMonth :d.getDate(),
+                dayOfWeek : dow,
+                dayOfWeekString : weekdayNames[l][dow],
+                isMonday : dow === 1,
+                month: month + 1,
+                monthString : monthNames[l][month],
+                year: d.getFullYear()
+    };
     }
     function Vis(options){
         var self = this;
         this.options = options || {};
         // set defaults
+        this.options.locale = this.options.locale || "de";
         this.options.minPart = this.options.minPart || 50;
-        this.options.limitLoops = this.options.limitLoops || 500;  //catch runaway intervals and debugging, hard limit of 500
+        this.options.flashColor = this.options.flashColor || "hsl(54,100%,90%)";
+        this.options.limitLoops = this.options.limitLoops === undefined ? 500 : this.options.limitLoops;  //catch runaway intervals and debugging, hard limit of 500
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
+        this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
+
         this.options.daysPerSecond = this.options.daysPerSecond || 7;
+        this.options.trailFallOff = this.options.trailFallOff || 0.05;
+        this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
+        this.options.loop = this.options.loop === undefined ? false : this.options.loop;
         this.options.containerId = this.options.containerId || 'vis';
         this.debug =  this.options.debug || false;
         this.eventDates = [
             // add more timed event here if needed
-            {name: "Der Mauerfall (11.9.'89)", dateString: "1989-11-09", fn : "mauerFall"
+            {
+                name: "Der Mauerfall (11.9.'89)",
+                dateString: "1989-11-09",
+                fn : "mauerFall",
+                resetFn : "mauerReset"
                 // todo pass function properly #pass
             }
         ];
@@ -32,11 +65,21 @@
             baseScale: 18000,
             baseSize: 1000
         };
-        this.demos = false;
+        this.scales = {
+            rPop : d3.scale.sqrt().domain([0, 5000]).range([0, 20])
+        };
+
+    this.demos = false;
         this.locations = false;
         this.groups = false;
-        this.globalTimeInterval = [];
-        this.currentTimeInterval = [];
+        this.globalInterval = {
+            dates : [],
+            bezRatios : {}
+        };
+        this.currentInterval = {
+            dates : [],
+            bezRatios : {}
+        };
         this.currentDate = null;
         this.mapReady = false;
 
@@ -100,36 +143,45 @@
         this.demos =  rows.sort(function(a, b) {return d3.ascending(a.date, b.date);});
         // get first and last date for time interval / timeline
         // set global time interval
-        this.globalTimeInterval = [this.demos[0].date, this.demos[this.demos.length-1].date];
-        this.currentTimeInterval = this.globalTimeInterval;
+        this.globalInterval.dates = [this.demos[0].date, this.demos[this.demos.length-1].date];
+        this.currentInterval.dates = this.globalInterval.dates;
         if (this.options.forcedStartDate) {
             this.options.forcedStartDate = new Date(this.options.forcedStartDate);
-            this.currentTimeInterval[0] = this.options.forcedStartDate;
+            this.currentInterval.dates[0] = this.options.forcedStartDate;
+        }
+        if (this.options.forcedEndDate) {
+            this.options.forcedEndDate = new Date(this.options.forcedEndDate);
+            this.currentInterval.dates[1] = this.options.forcedEndDate;
         }
         if (this.debug) {console.log("demos loaded");}
         this.checkLoadState();
     };
     Vis.prototype.groupBy = function(rows, fieldname, options) {
         // group unique values as object mith mapped unique groups
-        var opts = options || {};
-        opts.keyNameF = opts.keyNameF || function(d) { return d[fieldname];};
-        opts.rollUpF = opts.rollUpF || function(d) {return d};
+        var obj = {};
+        options = options || {};
+        options.tmp = options.tmp || false; // save to global groups or only return
+        options.keyNameF = options.keyNameF || function(d) { return d[fieldname];};
+        options.rollUpF = options.rollUpF || function(d) {return d};
         var arr  = d3.nest()
-            .key(opts.keyNameF)
-            .rollup(opts.rollUpF)
+            .key(options.keyNameF)
+            .rollup(options.rollUpF)
             .entries(rows)
             .map(function(d){
                 var group = d.key;
                 var values = d.values;
                 return {'group':group, 'values':values}
             });
-        this.groups = this.groups || {};
-        this.groups[fieldname] = {};
-        var obj = this.groups[fieldname];
         arr.forEach(function(d){
             obj[d.group] = d.values
         });
-        this.groups[fieldname] = obj;
+        if (options.tmp) {
+            return obj;
+        } else {
+            this.groups = this.groups || {};
+            this.groups[fieldname] = obj;
+        }
+
 
     };
     Vis.prototype.locationsLoaded = function(error, rows) {
@@ -171,8 +223,7 @@
         var dim = Math.min(width, height);
         var formatNumber = d3.format(",.0f");
         var smallFloat = 1.0e-6;
-
-        var projection = d3.geo.satellite()
+        this.projection = d3.geo.satellite()
             .distance(1.085)
             .scale(this.target.baseScale * dim/this.target.baseSize)
             .rotate([-16.5, -38, -11])
@@ -181,7 +232,7 @@
             .translate([width/2, height/2])
             .clipAngle(Math.acos(1 / 1.09) * 180 / Math.PI - smallFloat)
             .precision(0.1);
-
+        var projection = this.projection;
         var graticule = d3.geo.graticule()
             // [lonmin,latmin], [lonmax + offset for last, latmax + offset for last]
             .extent([[-5, 47], [30 + smallFloat, 85 + smallFloat]])
@@ -189,19 +240,18 @@
 
         var path = d3.geo.path()
             .projection(projection);
-        /*
-         var radius = d3.scale.sqrt()
-         .domain([0, 1e6])
-         .range([0, 15]);
-         */
         var container = d3.select("#" + this.options.containerId);
         this.ui = {};
         this.ui.datebox = container.append("div")
             .attr("class","ui")
             .attr("id","ui_currentdate");
 
-        this.ui.datebox.append("span").classed("date",true);
-        
+        this.ui.datetext = this.ui.datebox.append("p").classed("date",true);
+        this.ui.datetext.dayOfWeek = this.ui.datetext.append("span").classed("dayofweek",true);
+        this.ui.datetext.day = this.ui.datetext.append("span").classed("dayofmonth",true);
+        this.ui.datetext.month = this.ui.datetext.append("span").classed("month",true);
+        this.ui.datetext.year = this.ui.datetext.append("span").classed("year",true);
+
         this.svg = container.append("svg")
             .attr("width", width)
             .attr("height", height);
@@ -211,47 +261,27 @@
         this.filters = {};
         this.filters.blur = this.svg.append("filter")
             .attr("id", "svgfblur");
-        this.filters.blur.append("feGaussianBlur")
-            .attr("stdDeviation",2);
+        if (!is_chrome || this.options.noAgentExceptions) {
+            this.filters.blur.append("feGaussianBlur")
+                .attr("stdDeviation",2);
+        }
         // end filters
-
         // some inline svg styling happening here
         // breaks in chrome fullscreen
-        this.svg.append("path")
+        var grid = this.svg.append("g")
+            .classed("graticule",true);
+        grid.append("path")
             .datum(graticule)
-            .attr("class", "graticule")
+            .attr("class", "blur")
             .style("filter", "url(#svgfblur)")
             .style("stroke", "yellow")
             .style("stroke-width", 0.2)
             .style("opacity", 0.5)
             .attr("d", path);
 
-        this.svg.append("path")
+        grid.append("path")
             .datum(graticule)
-            .attr("class", "graticule")
             .attr("d", path);
-
-        /*
-         var legend = this.svg.append("g")
-         .attr("class", "legend")
-         .attr("transform", "translate(" + (width - 50) + "," + (height - 20) + ")")
-         .selectAll("g")
-         .data([1e6, 5e6, 1e7])
-         .enter().append("g");
-
-         legend.append("circle")
-         .attr("cy", function (d) {
-         return -radius(d);
-         })
-         .attr("r", radius);
-
-         legend.append("text")
-         .attr("y", function (d) {
-         return -2 * radius(d);
-         })
-         .attr("dy", "1.3em")
-         .text(d3.format(".1s"));
-         */
 
         this.svg.append("g")
             .attr("class", "land")
@@ -274,36 +304,40 @@
             .attr("class", "staatsgrenze")
             .attr("d", path);
 
+        this.markerLayer = this.svg.append("g")
+            .attr("class", "markers");
+
         this.mapReady = true;
         if (this.debug) {console.log("Map rendered")}
         this.checkLoadState();
-        /*
-         this.svg.append("g")
-         .attr("class", "bubble")
-         .selectAll("circle")
-         .data(topojson.feature(ddr, ddr.objects.VG250_DDRBEZ89_OHNEGF).features
-         .sort(function(a, b) { return b.properties.population - a.properties.population; }))
-         .enter().append("circle")
-         .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
-         .attr("r", function(d) { return radius(d.properties.population); })
-         .append("title")
-         .text(function(d) {
-         return d.properties.name
-         + "\nPopulation " + formatNumber(d.properties.population);
-         });
-         */
     };
+
+    Vis.prototype.resetEventsAtDate = function(date) {
+        var self = this;
+        this.eventDates.forEach( function(d) {
+            // todo implement timespans for events;
+            if (date < d.date) {
+                if (self.debug) {console.info("found future events", d.dateString, d.name);}
+                // todo pass function properly #pass
+                self[d.resetFn]();
+            } else if (date > d.date) {
+                self[d.fn]();
+            }
+        });
+    };
+
     Vis.prototype.showInterval = function(arr) {
         var self = this;
         var i = 1;
         var limit = this.options.limitLoops; //catch runaway intervals
-        var interval = arr || this.currentTimeInterval;
-        this.currentDate = interval[0];
+        var interval = arr || this.currentInterval.dates;
+        this.currentDate = new Date(interval[0]);
         var endDateStr = dateToString(interval[1]);
         if (this.debug) {console.log("showInterval",interval, this.currentDate);}
+        this.resetEventsAtDate(self.currentDate);
         this.timer = window.setInterval(function(){
             var currentDateString = dateToString(self.currentDate);
-            if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
+          //  if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
             // check for timed events
             self.eventDates.forEach( function(d) {
                // if (self.debug) {console.info(currentDateString, d.dateString);}
@@ -313,42 +347,85 @@
                     self[d.fn]();
                 }
             });
+            // update UI
+            var strObj = dateToLocale(self.currentDate,self.options.locale);
+            self.ui.datetext.dayOfWeek.text(strObj.dayOfWeekString);
+            self.ui.datetext.day.text(strObj.dayOfMonth + ".");
+            self.ui.datetext.month.text(strObj.monthString);
+            self.ui.datetext.year.text(strObj.year);
             // trigger rendering
             if (self.groups.dateString[currentDateString]) {self.showDate(currentDateString);}
             // end interval;
             if (currentDateString === endDateStr) {
-                if (self.debug) {console.log("exit interval loop based on date loop");}
-                window.clearInterval(self.timer);
+                if (self.options.loop) {
+                    self.currentDate = new Date(interval[0]);
+                    if (self.debug) {console.log("new loop",interval[0]);}
+                } else {
+                    if (self.debug) {console.log("exit interval loop based on date loop");}
+                    window.clearInterval(self.timer);
+                }
+            } else {
+                self.currentDate.setDate(self.currentDate.getDate() + 1);
             }
             if (i >= limit && limit) {
                 if (self.debug) {console.log("exit interval loop based on limit", limit, i);}
                 window.clearInterval(self.timer);
             } // clear on limit
             // increment current date by one day
-            self.currentDate.setDate(self.currentDate.getDate() + 1);
             i += 1;
         }, parseInt(1000 / self.options.daysPerSecond));
     };
     Vis.prototype.showDate = function(dateString){
+        var self = this;
         var land = d3.selectAll(".land");
+        this.styles = this.styles || {};
         var markers = this.groups.dateString[dateString];
-        markers.forEach( function (d){
-            var id = "#" + d.bezirkSafe;
+
+        // color bezirke based on participation ratio
+        // get base color from css inits;
+        this.styles.landBaseColor = this.styles.landBaseColor ||
+        land.style('fill');
+        var baseColor =  this.styles.landBaseColor;
+        var bezRatios = this.groups.bezirkeTotalsByDay[dateString];
+        this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios||{};
+        var rTrail = this.currentInterval.trailingBezRatios;
+        var flashBaseC = this.options.flashColor;
+        for(var d in bezRatios) {
+            var r = bezRatios[d].ratio;
+            // trailing brightness for fallback color
+            rTrail[d] = rTrail[d] === undefined ? r :
+            rTrail[d] * (1 - this.options.trailFallOff) + r;
+            var id = "#" + d;
             var b = land.select(id);
-            console.log(id, b);
-            //debugger;
-            b.classed("highlight",true);
-            setTimeout(function () {
-                b.classed("highlight",false);
-            }, 200);
-
-        })
-
-        //if (this.debug) {console.log(dateString, markers.length, markers[0]);}
-        // Get location here: this.locations[markers[0].lKey])
-
-        // find string n sorted
-        // todo draw circles from markers events and update time line here
+            b.style({
+                fill : d3.hsl(flashBaseC).brighter(r * 10),
+                opacity : 0.3
+            })
+                .transition()
+                    //.transition.duration(400)
+                    .style({
+                    fill: d3.hsl(baseColor).brighter(rTrail[d] * 3),
+                    opacity: 1
+                }
+            );
+        }
+        // ---
+        // draw circles
+        this.markerLayer
+            .selectAll("circle")
+            .data(markers)
+            .enter()
+            .append("circle")
+            .each(function(d) {
+                console.log(dateString, d.placename, d.partGuess,d.coords);
+                var projC = self.projection(d.coords);
+                d3.select(this).attr({
+                    r: self.scales.rPop(d.partGuess),
+                    cx: projC[0],
+                    cy: projC[1]
+                }).append("text").text(d.placename + d.partGuess)
+            });
+        // TODO improve
     };
 
     Vis.prototype.mauerFall = function() {
@@ -356,6 +433,28 @@
     };
     Vis.prototype.mauerReset = function() {
         this.svg.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
+    };
+
+    Vis.prototype.getBezirkeTotalsByDay = function() {
+        var g = this.groups.dateString;
+        var o = {};
+        for (var key in g) {
+            o[key] = this.groupBy(g[key], "bezirkSafe", {
+                tmp: true,
+                rollUpF: function (d) {
+                    return {
+                        "count": d.length,
+                        "total": d3.sum(d, function (d) {
+                            return d.partGuess;
+                        }),
+                        "ratio": d3.sum(d, function (d) {
+                            return d.ratioBez;
+                        })
+                    }
+                }
+            });
+        }
+        return o;
     };
 
     Vis.prototype.checkLoadState = function() {
@@ -367,6 +466,35 @@
                 this.joinArrayWithLocationKeyObj(this.demos, this.locations);
                 if (this.debug) {console.log(" -- group by date");}
                 this.groupBy(this.demos, "dateString");
+                // calculate totals by Bezirk
+                this.groups.bezirkeTotals = this.groupBy(this.demos, "bezirkSafe", {
+                    tmp : true,
+                    rollUpF : function(d) {
+                        return {
+                            "length": d.length,
+                            "ratio": d3.sum(d, function(d) {
+                                return d.ratioBez;
+                            }),
+                            "total": d3.sum(d, function(d) {
+                                return d.partGuess;
+                            })
+                        }
+                    }
+                });
+                // calculate totals by day and Bezirk
+                this.groups.bezirkeTotalsByDay = this.getBezirkeTotalsByDay();
+                // calculate totals by day
+                this.groups.totalsByDay = this.groupBy(this.demos, "dateString", {
+                    tmp : true,
+                    rollUpF : function(d) {
+                        return {
+                            "length": d.length,
+                            "total": d3.sum(d, function(d) {
+                                return d.partGuess;
+                            })
+                        }
+                    }
+                });
                 if (this.debug) {console.log(" -- start animation");}
                 this.showInterval();
                 break;
