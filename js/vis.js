@@ -4,8 +4,8 @@
     var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
     function dateToString(d) {
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
-       // return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
-         return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
+        // return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
+        return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
 
     }
 
@@ -21,14 +21,14 @@
         var dow = d.getDay();
         var month = d.getMonth();
         return  {
-                dayOfMonth :d.getDate(),
-                dayOfWeek : dow,
-                dayOfWeekString : weekdayNames[l][dow],
-                isMonday : dow === 1,
-                month: month + 1,
-                monthString : monthNames[l][month],
-                year: d.getFullYear()
-    };
+            dayOfMonth :d.getDate(),
+            dayOfWeek : dow,
+            dayOfWeekString : weekdayNames[l][dow],
+            isMonday : dow === 1,
+            month: month + 1,
+            monthString : monthNames[l][month],
+            year: d.getFullYear()
+        };
     }
     function Vis(options){
         var self = this;
@@ -72,7 +72,7 @@
         this.scales = {
             rel : d3.scale.linear().domain([0, 0.5]).range([0.1, 1])
 
-    };
+        };
 
         this.demos = false;
         this.locations = false;
@@ -360,10 +360,10 @@
         this.resetEventsAtDate();
         this.timer = window.setInterval(function(){
             var currentDateString = dateToString(self.currentDate);
-          //  if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
+            //  if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
             // check for timed events
             self.eventDates.forEach( function(d) {
-               // if (self.debug) {console.info(currentDateString, d.dateString);}
+                // if (self.debug) {console.info(currentDateString, d.dateString);}
                 if (d.dateString === currentDateString) {
                     if (self.debug) {console.info("found event", d.dateString, d.name);}
                     // todo pass function properly #pass
@@ -425,9 +425,9 @@
         //console.log (arr.length, arr[0].dateString, arr[0].placename);
         arr.forEach(function(d) {
             // todo figure out timeout asynchronity
-          //  setTimeout(function() {
-                self.renderCircle(d);
-         //   }, Math.random() * 3)
+            //  setTimeout(function() {
+            self.renderCircle(d);
+            //   }, Math.random() * 3)
         });
     };
 
@@ -448,38 +448,19 @@
         this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios||{};
         var rTrail = this.currentInterval.trailingBezRatios;
         var flashBaseC = this.options.flashColor;
-
-        var flash = function (b) {
-            return function () {
-                b   //.attr({opacity:0}).transition.delay(Math.random * 30)
-                    .style({
-                        fill: d3.hsl(flashBaseC).brighter(r * 3),
-                        opacity: 0.3
-                    })
-                    .transition()
-                    //.transition.duration(400)
-                    .style({
-                        fill: d3.hsl(baseColor).brighter(rTrail[d] * 3),
-                        opacity: 1
-                    });
-            };
-        };
-
         for(var d in bezRatios) {
             var r = bezRatios[d].ratio;
             // trailing brightness for fallback color
             rTrail[d] = rTrail[d] === undefined ? r :
             rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
             var id = "#" + d;
-
+// TODO Throw out comments here or get delays with random offset working
             var b = land.select(id);
-          //  setTimeout(function(){
-            b   //.attr({opacity:0}).transition.delay(Math.random * 30)
-                .style({
-                    fill : d3.hsl(flashBaseC),
-                    //.brighter(this.scales.rel(r)*0.2),
-                    opacity : 0.5
-                })
+            b.style({
+                fill : d3.hsl(flashBaseC),
+                //.brighter(this.scales.rel(r)*0.2),
+                opacity : 0.5
+            })
                 .transition().duration(800)
                 .style({
                     fill: d3.hsl(baseColor).brighter(
@@ -488,17 +469,7 @@
                     ),
                     opacity: 1
                 });
-        //);
-            // TODO get timeout asynchronously working,
-            // otherwise too much delay
-            //  }, Math.random * 50);
-
-            //     setTimeout(flash(land.select(id)), Math.random * 50);
-
         }
-        // ---
-        // draw circles
-        // TODO improve
     };
 
     Vis.prototype.mauerFall = function() {
