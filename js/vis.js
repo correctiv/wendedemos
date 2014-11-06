@@ -303,6 +303,12 @@
             this.filters.blur.append("feGaussianBlur")
                 .attr("stdDeviation",2);
         }
+
+        // Add tickerlayer in background
+        this.tickerLayer = this.svg.append("g")
+            .attr("class", "ticker");
+
+
         // end filters
         // some inline svg styling happening here
         // breaks in chrome fullscreen
@@ -341,8 +347,6 @@
             .attr("class", "staatsgrenze")
             .attr("d", path);
 
-        this.tickerLayer = this.svg.append("g")
-            .attr("class", "ticker");
         this.labelLayer = this.svg.append("g")
             .attr("class", "labels");
         this.markerLayer = this.svg.append("g")
@@ -412,8 +416,7 @@
                 self.options.daysPerSecond = self.options.defaultDaysPerSecond * self.options.fastFwdFactor;
                 self.ui.fast_fwd.classed('active', true);
             } else {
-                self.options.daysPerSecond = self.options.defaultDaysPerSecond;
-                self.ui.fast_fwd.classed('active', false);
+                self.fastFwdOff();
             }
             self.play();
         };
@@ -601,7 +604,13 @@
         this.play();
     };
 
+    Vis.prototype.fastFwdOff = function() {
+        this.options.daysPerSecond = this.options.defaultDaysPerSecond;
+        this.ui.fast_fwd.classed('active', false);
+    };
+
     Vis.prototype.pause = function() {
+        this.fastFwdOff();
         window.clearInterval(this.timer);
         this.ui.play.classed('icon-play', true).classed('icon-pause', false);
     };
