@@ -7,6 +7,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0873d0d7-3921-4082-9d28-f47275baf2c6" name="Default" comment="Merge remote-tracking branch 'origin/master'&#10;&#10;Conflicts:&#10;&#9;js/vis.js&#10;">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/dictionaries/max.xml" afterPath="$PROJECT_DIR$/.idea/dictionaries/max.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/vis.js" afterPath="$PROJECT_DIR$/js/vis.js" />
     </list>
     <ignored path="wendedemos.iws" />
@@ -30,7 +31,7 @@
     <favorites_list name="wendedemos" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.2888889">
+    <splitter split-orientation="horizontal" split-proportion="0.85811466">
       <split-first>
         <leaf>
           <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
@@ -46,8 +47,8 @@
           <file leaf-file-name="style.css" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/css/style.css">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="-12.642858" vertical-offset="1236" max-vertical-offset="4410">
-                  <caret line="53" column="11" selection-start-line="53" selection-start-column="11" selection-end-line="53" selection-end-column="11" />
+                <state vertical-scroll-proportion="-9.821428" vertical-offset="775" max-vertical-offset="4410">
+                  <caret line="35" column="10" selection-start-line="35" selection-start-column="7" selection-end-line="35" selection-end-column="10" />
                   <folding />
                 </state>
               </provider>
@@ -86,8 +87,8 @@
           <file leaf-file-name="vis.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/js/vis.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.659601" vertical-offset="12341" max-vertical-offset="17820">
-                  <caret line="429" column="38" selection-start-line="429" selection-start-column="38" selection-end-line="429" selection-end-column="38" />
+                <state vertical-scroll-proportion="0.6235139" vertical-offset="17948" max-vertical-offset="19290">
+                  <caret line="614" column="50" selection-start-line="614" selection-start-column="50" selection-end-line="614" selection-end-column="50" />
                   <folding>
                     <element signature="n#!!doc" expanded="true" />
                   </folding>
@@ -102,8 +103,8 @@
           <file leaf-file-name="vis.js" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/js/vis.js">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.18329178" vertical-offset="13683" max-vertical-offset="17820">
-                  <caret line="461" column="10" selection-start-line="461" selection-start-column="10" selection-end-line="461" selection-end-column="10" />
+                <state vertical-scroll-proportion="-0.28137386" vertical-offset="13713" max-vertical-offset="19290">
+                  <caret line="450" column="33" selection-start-line="450" selection-start-column="6" selection-end-line="450" selection-end-column="33" />
                   <folding>
                     <element signature="n#!!doc" expanded="true" />
                   </folding>
@@ -142,9 +143,10 @@
     <scope name="1" pattern="file[wendedemos]:js/*&amp;&amp;!file[wendedemos]:js/lib/*||file:index.html" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="391" />
+    <option name="x" value="283" />
+    <option name="y" value="219" />
     <option name="width" value="2074" />
-    <option name="height" value="1080" />
+    <option name="height" value="1047" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -405,7 +407,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="391" y="0" width="2074" height="1080" extended-state="0" />
+    <frame x="283" y="219" width="2074" height="1047" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -415,7 +417,7 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.088504575" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.092750534" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -700,14 +702,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/css/style.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-12.642858" vertical-offset="1236" max-vertical-offset="4410">
-          <caret line="53" column="11" selection-start-line="53" selection-start-column="11" selection-end-line="53" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-1.3432835" vertical-offset="0" max-vertical-offset="660">
@@ -724,10 +718,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/css/style.css">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-9.821428" vertical-offset="775" max-vertical-offset="4410">
+          <caret line="35" column="10" selection-start-line="35" selection-start-column="7" selection-end-line="35" selection-end-column="10" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/js/vis.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.18329178" vertical-offset="13683" max-vertical-offset="17820">
-          <caret line="461" column="10" selection-start-line="461" selection-start-column="10" selection-end-line="461" selection-end-column="10" />
+        <state vertical-scroll-proportion="0.6235139" vertical-offset="17948" max-vertical-offset="19290">
+          <caret line="614" column="50" selection-start-line="614" selection-start-column="50" selection-end-line="614" selection-end-column="50" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>

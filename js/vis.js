@@ -129,14 +129,14 @@
                 // keynames from Header
                 key: d.KEY,
                 name: d.NAME,
-                urlname: (d.NAMEDIFFURL === "") ? d.NAME : d.NAMEURLDIFF, //name for URL at ABL
+                urlName: (d.NAMEDIFFURL === "") ? d.NAME : d.NAMEURLDIFF, //name for URL at ABL
                 bezirk: d.BEZIRK,
                 bezirkSafe: d.BEZIRK === "Frankfurt/Oder" ? "Frankfurt" : d.BEZIRK,
                 bl14: d.BL2014,
                 pop89: +d.POP1989,
-                popbez89: +d.POPBEZ89,
+                popBez89: +d.POPBEZ89,
                 coords: [+d.LON, +d.LAT],
-                pcoords: self.projection([+d.LON, +d.LAT])
+                pCoords: self.projection([+d.LON, +d.LAT])
             };
         }, this.locationsLoaded.bind(this));
     };
@@ -213,17 +213,17 @@
                 var r;
                 try {
                     r = l[d.pKey];
-                    d.placename = r.name;
-                    d.placenameURL = r.urlname;
+                    d.placeName = r.name;
+                    d.placeNameURL = r.urlname;
                     d.bezirk = r.bezirk;
                     d.bezirkSafe = r.bezirkSafe;
                     d.coords = r.coords;
-                    d.pcoords = r.pcoords;
+                    d.pCoords = r.pCoords;
                     d.pop89 = r.pop89;
-                    d.popbez89 = r.popbez89;
+                    d.popBez89 = r.popbez89;
                     d.ratio = d.partGuess/ d.pop89;
                     d.ratioBez = d.partGuess/ d.popbez89;
-                    d.placekey = d.pKey;
+                    d.placeKey = d.pKey;
                 }
                 catch(err) {console.error("key in locations",d.pKey, l[d.pKey],err);}
                 //clean up unneeded fields here and join coords by location key;
@@ -406,8 +406,8 @@
         self.markerLayer.append("circle")
             .attr({
                 r : self.scales.rPop(d.partGuess),
-                cx: d.pcoords[0],
-                cy: d.pcoords[1],
+                cx: d.pCoords[0],
+                cy: d.pCoords[1],
                 fill : "lime",
                 opacity : 1
             })
@@ -549,10 +549,12 @@
                 tmp: true,
                 rollUpF: function (d) {
                     return {
-                        "length": d.length,
-                        "name": d.placename,
-                        "pCoords": d.pCoords,
-                        "total": d3.sum(d, function (d) {
+                        placeName: d[0].placeName,
+                        bezirk: d[0].bezirk,
+                        pop89: d[0].pop89,
+                        length: d.length,
+                        pCoords: d[0].pCoords,
+                        total: d3.sum(d, function (d) {
                             return d.partGuess;
                         }),
                         "totalRel": d3.sum(d, function (d) {
@@ -561,18 +563,65 @@
                     }
                 }
             });
-            this.labelLayer.data(this.groups.totalsByPlace).enter().append("text")
-                .attr({
-                    text: function (d) {
-                        return d.name;
-                    },
-                    x: function (d) {
-                        return d.pCoords[0];
-                    },
-                    y: function (d) {
-                        return d.pCoords[1];
-                    }
-                });
+            //console.log(this.groups.totalsByPlace[1]);
+            // debugger;
+            var textNodes = d3.select("svg").select(".labels");
+            var o = this.groups.totalsByPlace;
+            for(var d in o) {
+                var s = {anchor: "start"};
+                var p = o[d].pop89;
+                var n = o[d].placeName;
+                var supressNames = [
+                    "Rostock-Warnemünde",
+                    "Rostock-Gehlsdorf",
+                    "Berlin-Köpenick",
+                    "Berlin-Staaken",
+                    "Berlin-Dahlwitz-Hoppegarten",
+                    "Berlin-Kaulsdorf",
+                    "Halle-Neustadt"
+                ];
+                var alignLeft = ["Potsdam","Gotha","Zwickau"];
+                var alignCenter = ["Erfurt","Weimar","Karl-Marx-Stadt"];
+                if (supressNames.indexOf(n) > -1) {continue;}
+                if (alignLeft.indexOf(n) > -1) {s.anchor = "end";}
+                if (alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
+
+                switch (true) {
+                    case (p < 10000) :
+                        s = {r: 0.7, showLabel: false};
+                        break;
+                    case (p < 50000) :
+                        s = {r: 1, showLabel: false};
+                        break;
+                    case (p < 100000) :
+                        s = {r: 1.5, showLabel: true};
+                        break;
+                    default :
+                        s = {r: 3, showLabel: true};
+                        break;
+                }
+                textNodes.append("circle")
+                    .attr({
+                        cx: o[d].pCoords[0],
+                        cy: o[d].pCoords[1],
+                        r: s.r
+                    })
+                console.log(o[d]);
+                if (s.showLabel) {
+                    textNodes.append("text")
+                        .attr("text-anchor", s.align)
+                        .attr({
+                            x: o[d].pCoords[0] ,
+                            y: o[d].pCoords[1] - 5
+                        })
+                        .style({
+                            "font-size": "11px",
+                            "fill": "white",
+                            "font-family": "sans-serif",
+                        })
+                        .text(n);
+                }
+            }
 
         }
         if (this.demos && this.locations && this.mapReady) {
