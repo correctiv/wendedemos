@@ -408,7 +408,7 @@
         arr.forEach(function(d) {
             setTimeout(function() {
                 self.renderCircle(d);
-            }, Math.random() * 50)
+            }, Math.random() * 50);
         });
     };
 
@@ -428,27 +428,30 @@
         this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios||{};
         var rTrail = this.currentInterval.trailingBezRatios;
         var flashBaseC = this.options.flashColor;
+
+        var flash = function(b) {
+            return function() {
+                b   //.attr({opacity:0}).transition.delay(Math.random * 30)
+                .style({
+                    fill : d3.hsl(flashBaseC).brighter(r * 3),
+                    opacity : 0.3
+                })
+                .transition()
+                    //.transition.duration(400)
+                    .style({
+                        fill: d3.hsl(baseColor).brighter(rTrail[d] * 3),
+                        opacity: 1
+                    });
+            };
+        };
+
         for(var d in bezRatios) {
             var r = bezRatios[d].ratio;
             // trailing brightness for fallback color
             rTrail[d] = rTrail[d] === undefined ? r :
             rTrail[d] * (1 - this.options.trailFallOff) + r;
             var id = "#" + d;
-            var b = land.select(id);
-            setTimeout(function(){
-            b   //.attr({opacity:0}).transition.delay(Math.random * 30)
-            .style({
-                fill : d3.hsl(flashBaseC).brighter(r * 3),
-                opacity : 0.3
-            })
-                .transition()
-                    //.transition.duration(400)
-                    .style({
-                    fill: d3.hsl(baseColor).brighter(rTrail[d] * 3),
-                    opacity: 1
-                }
-            );
-            }, Math.random * 50);
+            setTimeout(flash(land.select(id)), Math.random * 50);
         }
         // ---
         // draw circles
@@ -488,50 +491,44 @@
 
     Vis.prototype.checkLoadState = function() {
         if (this.debug) {console.log("Check load state");}
-        // considered hacky, replace with ifs if needed;
-        switch(true) {
-            case (this.demos && this.locations && !this.groups):
-                if (this.debug) {console.log(" -- join records");}
-                this.joinArrayWithLocationKeyObj(this.demos, this.locations);
-                if (this.debug) {console.log(" -- group by date");}
-                this.groupBy(this.demos, "dateString");
-                // calculate totals by Bezirk
-                this.groups.bezirkeTotals = this.groupBy(this.demos, "bezirkSafe", {
-                    tmp : true,
-                    rollUpF : function(d) {
-                        return {
-                            "length": d.length,
-                            "ratio": d3.sum(d, function(d) {
-                                return d.ratioBez;
-                            }),
-                            "total": d3.sum(d, function(d) {
-                                return d.partGuess;
-                            })
-                        };
-                    }
-                });
-                // calculate totals by day and Bezirk
-                this.groups.bezirkeTotalsByDay = this.getBezirkeTotalsByDay();
-                // calculate totals by day
-                this.groups.totalsByDay = this.groupBy(this.demos, "dateString", {
-                    tmp : true,
-                    rollUpF : function(d) {
-                        return {
-                            "length": d.length,
-                            "total": d3.sum(d, function(d) {
-                                return d.partGuess;
-                            })
-                        };
-                    }
-                });
-                if (this.debug) {console.log(" -- start animation");}
-                this.showInterval();
-                break;
-            case (!this.mapReady || !this.demos || !this.locations) :
-                if (this.debug) {console.log(" -- not ready yet");}
-                break;
-            default:
-                console.error("unhandled state:", this);
+        if (this.demos && this.locations && !this.groups) {
+            if (this.debug) {console.log(" -- join records");}
+            this.joinArrayWithLocationKeyObj(this.demos, this.locations);
+            if (this.debug) {console.log(" -- group by date");}
+            this.groupBy(this.demos, "dateString");
+            // calculate totals by Bezirk
+            this.groups.bezirkeTotals = this.groupBy(this.demos, "bezirkSafe", {
+                tmp : true,
+                rollUpF : function(d) {
+                    return {
+                        "length": d.length,
+                        "ratio": d3.sum(d, function(d) {
+                            return d.ratioBez;
+                        }),
+                        "total": d3.sum(d, function(d) {
+                            return d.partGuess;
+                        })
+                    };
+                }
+            });
+            // calculate totals by day and Bezirk
+            this.groups.bezirkeTotalsByDay = this.getBezirkeTotalsByDay();
+            // calculate totals by day
+            this.groups.totalsByDay = this.groupBy(this.demos, "dateString", {
+                tmp : true,
+                rollUpF : function(d) {
+                    return {
+                        "length": d.length,
+                        "total": d3.sum(d, function(d) {
+                            return d.partGuess;
+                        })
+                    };
+                }
+            });
+        }
+        if (this.demos && this.locations && this.mapReady) {
+            if (this.debug) {console.log(" -- start animation");}
+            this.showInterval();
         }
     };
 
