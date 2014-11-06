@@ -4,8 +4,35 @@
     var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
     function dateToString(d) {
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
-        return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
+       // return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
+         return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
+
     }
+/*
+    function fadeCircles() {
+        var m = d3.select(".markers");
+        var faint = m.selectAll("circle").filter(
+            function(a) {
+                if (a.style("opacity") < 0.1) {
+                    return a;
+                }
+            }
+        );
+        faint.remove();
+        m.selectAll("circle")
+            .call(
+            function(a) {
+                console.log(a);
+              var s =  a.style("opacity");
+                if (s < 0.05) {delete m[a]}
+                a.style("opacity", s * 0.99);
+       // if (d[0] !== undefined) {
+    })
+            window.requestAnimationFrame(fadeCircles);
+    //}
+}
+
+*/
     function dateToLocale(d,locale) {
         var supported = ["de"];
         var l = (supported.indexOf(locale) > -1) ? locale : supported[0];
@@ -38,7 +65,7 @@
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
 
-        this.options.daysPerSecond = this.options.daysPerSecond || 7;
+        this.options.daysPerSecond = this.options.daysPerSecond || 4;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
         this.options.loop = this.options.loop === undefined ? false : this.options.loop;
@@ -107,14 +134,11 @@
                 eTypeIsDemo: +d.etype_isdemo
             };
             // calculate best guess for number of participants
-            o.partGuess =
-                o.partMax === 0 ? self.options.minPart : // Return unknown number of participants as set in option minpart (50)
-                    (
-                        o.partMin === 0 ? o.partMax : ( // Return max if min is unknown
-                            o.partMax + o.partMin // Return average
-                        )
-                    )
-            ;
+                if (o.partMax === 0 ) {
+                    o.partGuess = self.options.minPart
+                } else {
+                    o.partGuess =  o.partMax;
+                }
             o.dayOfMonth = o.date.getDate();
             o.month = o.date.getMonth() + 1;
             o.year = o.date.getFullYear();
@@ -134,7 +158,8 @@
                 bl14: d.BL2014,
                 pop89: +d.POP1989,
                 popbez89: +d.POPBEZ89,
-                coords: [+d.LON, +d.LAT]
+                coords: [+d.LON, +d.LAT],
+                pcoords: self.projection([+d.LON, +d.LAT])
             };
         }, this.locationsLoaded.bind(this));
     };
@@ -205,16 +230,18 @@
                     d.bezirk = r.bezirk;
                     d.bezirkSafe = r.bezirkSafe;
                     d.coords = r.coords;
+                    d.pcoords = r.pcoords;
                     d.pop89 = r.pop89;
                     d.popbez89 = r.popbez89;
                     d.ratio = d.partGuess/ d.pop89;
                     d.ratioBez = d.partGuess/ d.popbez89;
                     delete d.pKey; // optional, but no longer needed
                 }
-                catch(err) {console.error("key,key in locations",d.pKey, l[d.pKey],err);}
+                catch(err) {console.error("key in locations",d.pKey, l[d.pKey],err);}
                 //clean up unneeded fields here and join coords by location key;
             });
     };
+
 
     Vis.prototype.drawMap = function (error, ddr) {
         if (error) {return console.error(error);}
@@ -326,6 +353,8 @@
         });
     };
 
+
+
     Vis.prototype.showInterval = function(arr) {
         var self = this;
         var i = 1;
@@ -334,7 +363,7 @@
         this.currentDate = new Date(interval[0]);
         var endDateStr = dateToString(interval[1]);
         if (this.debug) {console.log("showInterval",interval, this.currentDate);}
-        this.resetEventsAtDate(self.currentDate);
+        this.resetEventsAtDate();
         this.timer = window.setInterval(function(){
             var currentDateString = dateToString(self.currentDate);
           //  if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
@@ -356,6 +385,8 @@
             // trigger rendering
             if (self.groups.dateString[currentDateString]) {self.showDate(currentDateString);}
             // end interval;
+            // trigger fadeout
+            //fadeCircles();
             if (currentDateString === endDateStr) {
                 if (self.options.loop) {
                     self.currentDate = new Date(interval[0]);
@@ -375,12 +406,39 @@
             i += 1;
         }, parseInt(1000 / self.options.daysPerSecond));
     };
+
+    Vis.prototype.renderCircle = function(d) {
+        var self = this;
+        self.markerLayer.append("circle")
+            .attr({
+                r : self.scales.rPop(d.partGuess),
+                cx: d.pcoords[0],
+                cy: d.pcoords[1],
+                fill : "lime",
+                opacity : 1
+            })
+            .transition().ease("circle").duration(1000).attr({r : 1, opacity : 0}).remove();
+            //.append("text").text(d.placename + d.partGuess)
+    };
+
+
+    Vis.prototype.renderMarkers = function(arr){
+        var self = this;
+        //console.log (arr.length, arr[0].dateString, arr[0].placename);
+        arr.forEach(function(d) {
+            setTimeout(function() {
+                self.renderCircle(d);
+            }, Math.random() * 500)
+        });
+    };
+
+
     Vis.prototype.showDate = function(dateString){
         var self = this;
         var land = d3.selectAll(".land");
         this.styles = this.styles || {};
         var markers = this.groups.dateString[dateString];
-
+        this.renderMarkers(markers, this.markerLayer);
         // color bezirke based on participation ratio
         // get base color from css inits;
         this.styles.landBaseColor = this.styles.landBaseColor ||
@@ -411,20 +469,6 @@
         }
         // ---
         // draw circles
-        this.markerLayer
-            .selectAll("circle")
-            .data(markers)
-            .enter()
-            .append("circle")
-            .each(function(d) {
-                console.log(dateString, d.placename, d.partGuess,d.coords);
-                var projC = self.projection(d.coords);
-                d3.select(this).attr({
-                    r: self.scales.rPop(d.partGuess),
-                    cx: projC[0],
-                    cy: projC[1]
-                }).append("text").text(d.placename + d.partGuess)
-            });
         // TODO improve
     };
 

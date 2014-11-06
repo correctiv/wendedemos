@@ -17,11 +17,10 @@ html, body {
     font-weight: 600;
 }
 
-circle {
+.markers circle  {
     fill: white;
     opacity: 0.25;
-    transform-origin: center;
-    transform: rotateX( 50deg );
+
 }
 
 #ui_currentdate {
