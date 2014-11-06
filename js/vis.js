@@ -377,6 +377,7 @@
                 // todo pass function properly #pass
                 self[d.resetFn]();
             } else if (date > d.date) {
+                // todo pass function properly #pass
                 self[d.fn]();
             }
         });
@@ -523,7 +524,7 @@
             }
         }
     };
-
+// todo pass function properly #pass in reference not string
     Vis.prototype.mauerFall = function() {
         this.svg.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
     };

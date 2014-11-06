@@ -94,8 +94,8 @@
       <file leaf-file-name="vis.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/js/vis.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33225808" vertical-offset="1594" max-vertical-offset="21240">
-              <caret line="60" column="52" selection-start-line="60" selection-start-column="13" selection-end-line="60" selection-end-column="52" />
+            <state vertical-scroll-proportion="0.28387097" vertical-offset="15604" max-vertical-offset="21270">
+              <caret line="526" column="60" selection-start-line="526" selection-start-column="3" selection-end-line="526" selection-end-column="60" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
               </folding>
@@ -466,12 +466,12 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/js/vis.js</url>
-          <line>500</line>
+          <line>501</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/js/vis.js</url>
-          <line>663</line>
+          <line>664</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
@@ -730,8 +730,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/js/vis.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33225808" vertical-offset="1594" max-vertical-offset="21240">
-          <caret line="60" column="52" selection-start-line="60" selection-start-column="13" selection-end-line="60" selection-end-column="52" />
+        <state vertical-scroll-proportion="0.28387097" vertical-offset="15604" max-vertical-offset="21270">
+          <caret line="526" column="60" selection-start-line="526" selection-start-column="3" selection-end-line="526" selection-end-column="60" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
           </folding>
