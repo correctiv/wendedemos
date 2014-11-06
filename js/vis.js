@@ -71,7 +71,7 @@
         };
         this.scales = {};
 
-    this.demos = false;
+        this.demos = false;
         this.locations = false;
         this.groups = false;
         this.globalInterval = {
@@ -109,25 +109,24 @@
                 eTypeIsDemo: +d.etype_isdemo
             };
             // calculate best guess for number of participants
-                if (o.partMax === 0 ) {
-                    o.partGuess = self.options.minPart
-                } else {
-                    o.partGuess =  o.partMax;
-                }
+            if (o.partMax === 0 ) {
+                o.partGuess = self.options.minPart;
+            } else {
+                o.partGuess =  o.partMax;
+            }
             o.dayOfMonth = o.date.getDate();
             o.month = o.date.getMonth() + 1;
             o.year = o.date.getFullYear();
             o.dateString = dateToString(o.date);
             return o;
-        },
-            this.demosLoaded.bind(this));
+        }, this.demosLoaded.bind(this));
 
         d3.tsv("assets/data/orte.tsv", function(d) {
             return {
                 // keynames from Header
                 key: d.KEY,
                 name: d.NAME,
-                urlname: (d.NAMEDIFFURL == "") ? d.NAME : d.NAMEURLDIFF, //name for URL at ABL
+                urlname: (d.NAMEDIFFURL === "") ? d.NAME : d.NAMEURLDIFF, //name for URL at ABL
                 bezirk: d.BEZIRK,
                 bezirkSafe: d.BEZIRK === "Frankfurt/Oder" ? "Frankfurt" : d.BEZIRK,
                 bl14: d.BL2014,
@@ -138,6 +137,7 @@
             };
         }, this.locationsLoaded.bind(this));
     };
+
     Vis.prototype.demosLoaded = function(error, rows) {
         // sort events by date
         this.demos =  rows.sort(function(a, b) {return d3.ascending(a.date, b.date);});
@@ -156,13 +156,14 @@
         if (this.debug) {console.log("demos loaded");}
         this.checkLoadState();
     };
+
     Vis.prototype.groupBy = function(rows, fieldname, options) {
         // group unique values as object mith mapped unique groups
         var obj = {};
         options = options || {};
         options.tmp = options.tmp || false; // save to global groups or only return
-        options.keyNameF = options.keyNameF || function(d) { return d[fieldname];};
-        options.rollUpF = options.rollUpF || function(d) {return d};
+        options.keyNameF = options.keyNameF || function(d) { return d[fieldname]; };
+        options.rollUpF = options.rollUpF || function(d) { return d; };
         var arr  = d3.nest()
             .key(options.keyNameF)
             .rollup(options.rollUpF)
@@ -170,10 +171,13 @@
             .map(function(d){
                 var group = d.key;
                 var values = d.values;
-                return {'group':group, 'values':values}
+                return {
+                    group: group,
+                    values: values
+                };
             });
         arr.forEach(function(d){
-            obj[d.group] = d.values
+            obj[d.group] = d.values;
         });
         if (options.tmp) {
             return obj;
@@ -181,49 +185,49 @@
             this.groups = this.groups || {};
             this.groups[fieldname] = obj;
         }
-
-
     };
+
     Vis.prototype.locationsLoaded = function(error, rows) {
         var rowsSorted = rows.sort(function(a, b) {
             return d3.ascending(a.key, b.key);
         });
         var locations = {};
-        rowsSorted.forEach(function(r){locations[r.key] = r;});
+        rowsSorted.forEach(function(r){ locations[r.key] = r; });
         this.locations = locations;
         if (this.debug) {console.log("locations loaded");}
         this.checkLoadState();
     };
+
     Vis.prototype.joinArrayWithLocationKeyObj = function(arr, l) {
-        arr.forEach(
-            function (d) {
-                var r;
-                try {
-                    r = l[d.pKey];
-                    d.placename = r.name;
-                    d.placenameURL = r.urlname;
-                    d.bezirk = r.bezirk;
-                    d.bezirkSafe = r.bezirkSafe;
-                    d.coords = r.coords;
-                    d.pcoords = r.pcoords;
-                    d.pop89 = r.pop89;
-                    d.popbez89 = r.popbez89;
-                    d.ratio = d.partGuess/ d.pop89;
-                    d.ratioBez = d.partGuess/ d.popbez89;
-                    delete d.pKey; // optional, but no longer needed
-                }
-                catch(err) {console.error("key in locations",d.pKey, l[d.pKey],err);}
-                //clean up unneeded fields here and join coords by location key;
-            });
+        arr.forEach(function (d) {
+            var r;
+            try {
+                r = l[d.pKey];
+                d.placename = r.name;
+                d.placenameURL = r.urlname;
+                d.bezirk = r.bezirk;
+                d.bezirkSafe = r.bezirkSafe;
+                d.coords = r.coords;
+                d.pcoords = r.pcoords;
+                d.pop89 = r.pop89;
+                d.popbez89 = r.popbez89;
+                d.ratio = d.partGuess/ d.pop89;
+                d.ratioBez = d.partGuess/ d.popbez89;
+                delete d.pKey; // optional, but no longer needed
+            }
+            catch(err) {console.error("key in locations",d.pKey, l[d.pKey],err);}
+            //clean up unneeded fields here and join coords by location key;
+        });
     };
 
-
     Vis.prototype.drawMap = function (error, ddr) {
-        if (error) {return console.error(error);}
+        if (error) { return console.error(error); }
         var width = this.target.elem.offsetWidth,
             height = this.target.elem.offsetHeight;
         var dim = Math.min(width, height);
-        this.scales.rPop = d3.scale.sqrt().domain([100, 100000]).range([2, dim*this.options.maxRadiusRatio])
+        this.scales.rPop = d3.scale.sqrt()
+            .domain([100, 100000])
+            .range([2, dim * this.options.maxRadiusRatio]);
         var formatNumber = d3.format(",.0f");
         var smallFloat = 1.0e-6;
         this.projection = d3.geo.satellite()
@@ -311,7 +315,7 @@
             .attr("class", "markers");
 
         this.mapReady = true;
-        if (this.debug) {console.log("Map rendered")}
+        if (this.debug) {console.log("Map rendered");}
         this.checkLoadState();
     };
 
@@ -328,8 +332,6 @@
             }
         });
     };
-
-
 
     Vis.prototype.showInterval = function(arr) {
         var self = this;
@@ -461,22 +463,24 @@
     };
 
     Vis.prototype.getBezirkeTotalsByDay = function() {
+        var getRollUp = function (d) {
+            return {
+                "count": d.length,
+                "total": d3.sum(d, function (d) {
+                    return d.partGuess;
+                }),
+                "ratio": d3.sum(d, function (d) {
+                    return d.ratioBez;
+                })
+            };
+        };
+
         var g = this.groups.dateString;
         var o = {};
         for (var key in g) {
             o[key] = this.groupBy(g[key], "bezirkSafe", {
                 tmp: true,
-                rollUpF: function (d) {
-                    return {
-                        "count": d.length,
-                        "total": d3.sum(d, function (d) {
-                            return d.partGuess;
-                        }),
-                        "ratio": d3.sum(d, function (d) {
-                            return d.ratioBez;
-                        })
-                    }
-                }
+                rollUpF: getRollUp
             });
         }
         return o;
@@ -503,7 +507,7 @@
                             "total": d3.sum(d, function(d) {
                                 return d.partGuess;
                             })
-                        }
+                        };
                     }
                 });
                 // calculate totals by day and Bezirk
@@ -517,7 +521,7 @@
                             "total": d3.sum(d, function(d) {
                                 return d.partGuess;
                             })
-                        }
+                        };
                     }
                 });
                 if (this.debug) {console.log(" -- start animation");}
