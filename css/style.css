@@ -32,6 +32,9 @@ html, body {
     background-color: hsla(0,0%,30%,0.3);
 }
 
+.legend text {
+    fill: white;
+}
 
 .labeltext .pl300kplus {
  font-weight: 800;

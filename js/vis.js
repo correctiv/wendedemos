@@ -338,20 +338,21 @@
             .attr("class", "labels");
         this.markerLayer = this.svg.append("g")
             .attr("class", "markers");
+        var legendOffset = [this.width * 4/5,this.height * 1/6];
+        var maxR = this.scales.rPop(100000);
         this.legend = this.svg.append("g")
+            .attr("transform", "translate("+
+            legendOffset[0] +"," + legendOffset[1] +")")
             .attr("class", "legend");
-        this.legend.append("circle")
-            .attr({
-                cx: this.width * 4/5,
-                cy: this.height * 1/6,
-                r : this.scales.rPop(100000),
-
-            }).append("text").text("100 000").attr(
-            {"text-anchor": "middle",
-                x : this.width * 4/5,
-                y : this.height * 1/6 - this.scales.rPop(100000)
-            }
-        );
+        this.legend.append("circle").attr({cx: 0, cy: 0,r : maxR});
+        this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(50000)-maxR,r : this.scales.rPop(50000)});
+        this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(20000)-maxR,r : this.scales.rPop(20000)});
+        //this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(10000)-maxR,r : this.scales.rPop(10000)});
+        this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(5000)-maxR,r : this.scales.rPop(5000)});
+        this.legend.append("text").text("100 000").attr({"text-anchor": "middle", x : 0, y : maxR * 5/6 } );
+        this.legend.append("text").text("50 000").attr({"text-anchor": "middle", x : 0, y : this.scales.rPop(50000) * 11/6 - maxR } );
+        this.legend.append("text").text("20 000").attr({"text-anchor": "middle", x : 0, y : this.scales.rPop(20000) * 8/5 - maxR  } );
+        this.legend.append("text").text("5000").attr({"text-anchor": "middle", x : 0, y : this.scales.rPop(5000) * 6/5 - maxR  } );
 
         this.mapReady = true;
         if (this.debug) {
