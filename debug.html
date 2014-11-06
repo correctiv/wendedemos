@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body>
+<div id="vis"></div>
+<script src="js/lib/d3.min.js" charset="utf-8"></script>
+<script src="js/lib/d3.geo.projection.v0.min.js" charset="utf-8"></script>
+<script src="js/lib/topojson.js" charset="utf-8"></script>
+<script src="js/vis.js" charset="utf-8"></script>
+<script>
+  var vis = new Vis({
+      debug:true,
+      // for debugging only
+      limitLoops: false,
+      forcedStartDate: "1989-10-01",
+      forcedEndDate: "1989-12-05",
+      noAgentExceptions: true,
+      enableTicker: true,
+      loop: false
+  });
+  vis.init();
+</script>
+</body>
