@@ -40,6 +40,7 @@
         this.options.locale = this.options.locale || "de";
         this.options.minPart = this.options.minPart || 50;
         this.options.flashColor = this.options.flashColor || "hsl(54,30%,50%)";
+        this.options.flashDistricts = this.options.flashDistricts || false;
         this.options.limitLoops = this.options.limitLoops === undefined ? 500 : this.options.limitLoops;  //catch runaway intervals and debugging, hard limit of 500
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
@@ -279,8 +280,11 @@
         this.ui.datetext.year = this.ui.datetext.append("span").classed("year",true);
 
         this.svg = container.append("svg")
-            .attr("width", this.width)
-            .attr("height", this.height);
+            .attr({
+                width: this.width,
+                height: this.height,
+                "text-rendering": "geometricPrecision"
+            });
 
         // svg filters have to be inline
         // support of svg-filters from css is poor across browsers
@@ -330,19 +334,24 @@
             .attr("class", "staatsgrenze")
             .attr("d", path);
 
-        this.markerLayer = this.svg.append("g")
-            .attr("class", "markers");
         this.labelLayer = this.svg.append("g")
             .attr("class", "labels");
-
+        this.markerLayer = this.svg.append("g")
+            .attr("class", "markers");
         this.legend = this.svg.append("g")
             .attr("class", "legend");
         this.legend.append("circle")
             .attr({
-                cx: width/5,
-                cy: height * 1/3,
-                r : this.scales.rPop(100000)
-            });
+                cx: this.width * 4/5,
+                cy: this.height * 1/6,
+                r : this.scales.rPop(100000),
+
+            }).append("text").text("100 000").attr(
+            {"text-anchor": "middle",
+                x : this.width * 4/5,
+                y : this.height * 1/6 - this.scales.rPop(100000)
+            }
+        );
 
         this.mapReady = true;
         if (this.debug) {
@@ -421,29 +430,32 @@
 
         self.markerLayer.append("circle")
             .attr({
-                r : self.scales.rPop(d.partGuess),
+                r : 0,
                 cx: d.pCoords[0],
                 cy: d.pCoords[1],
                 fill : "lime",
+                opacity : 0
+            })
+            .transition().ease("cubic-out").duration(900)
+            .attr({
+                r : self.scales.rPop(d.partGuess),
                 opacity : 1
             })
             // todo insert custom timer for less load
             .transition().ease("linear").duration(2500)
-            //.attr({r: self.scales.rPop(d.partGuess*0.8)})
+            .attr({r: self.scales.rPop(d.partGuess*0.8)})
             .style({opacity : 0}).remove();
     };
 
 
     Vis.prototype.renderMarkers = function(arr){
-        this.drawStack = this.drawStack || 0;
-        this.drawStack += arr.length;
         var self = this;
         //console.log (arr.length, arr[0].dateString, arr[0].placename);
         arr.forEach(function(d) {
             // todo figure out timeout asynchronity
-            //  setTimeout(function() {
+             setTimeout(function() {
             self.renderCircle(d);
-            //   }, Math.random() * 3)
+            }, Math.random() * 1000/self.daysPerSecond)
         });
     };
 
@@ -454,37 +466,39 @@
         this.styles = this.styles || {};
         var markers = this.groups.dateString[dateString];
         this.renderMarkers(markers, this.markerLayer);
-        // color bezirke based on participation ratio
-        // get base color from css inits;
-        // todo fix unexpected clipping for brightness behavior;
-        this.styles.landBaseColor = this.styles.landBaseColor ||
-        land.style('fill');
-        var baseColor =  this.styles.landBaseColor;
-        var bezRatios = this.groups.bezirkeTotalsByDay[dateString];
-        this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios||{};
-        var rTrail = this.currentInterval.trailingBezRatios;
-        var flashBaseC = this.options.flashColor;
-        for(var d in bezRatios) {
-            var r = bezRatios[d].ratio;
-            // trailing brightness for fallback color
-            rTrail[d] = rTrail[d] === undefined ? r :
-            rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
-            var id = "#" + d;
+        if (this.options.flashDistricts) {
+            // color bezirke based on participation ratio
+            // get base color from css inits;
+            // todo fix unexpected clipping for brightness behavior;
+            this.styles.landBaseColor = this.styles.landBaseColor ||
+            land.style('fill');
+            var baseColor = this.styles.landBaseColor;
+            var bezRatios = this.groups.bezirkeTotalsByDay[dateString];
+            this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios || {};
+            var rTrail = this.currentInterval.trailingBezRatios;
+            var flashBaseC = this.options.flashColor;
+            for (var d in bezRatios) {
+                var r = bezRatios[d].ratio;
+                // trailing brightness for fallback color
+                rTrail[d] = rTrail[d] === undefined ? r :
+                rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
+                var id = "#" + d;
 // TODO Throw out comments here or get delays with random offset working
-            var b = land.select(id);
-            b.style({
-                fill : d3.hsl(flashBaseC),
-                //.brighter(this.scales.rel(r)*0.2),
-                opacity : 0.5
-            })
-                .transition().duration(800)
-                .style({
-                    fill: d3.hsl(baseColor).brighter(
-                        0.05
-                        // (this.scales.rel(rTrail[d]) > 0.2)? 0.2 : this.scales.rel(rTrail[d]);
-                    ),
-                    opacity: 1
-                });
+                var b = land.select(id);
+                b.style({
+                    fill: d3.hsl(flashBaseC),
+                    //.brighter(this.scales.rel(r)*0.2),
+                    opacity: 0.5
+                })
+                    .transition().duration(800)
+                    .style({
+                        fill: d3.hsl(baseColor).brighter(
+                            0.05
+                            // (this.scales.rel(rTrail[d]) > 0.2)? 0.2 : this.scales.rel(rTrail[d]);
+                        ),
+                        opacity: 1
+                    });
+            }
         }
     };
 
@@ -586,7 +600,7 @@
             var labels = textNodes.append("g").attr("class","labeltext");
             var o = this.groups.totalsByPlace;
             for(var d in o) {
-                var s = {anchor: "start"};
+                var s = {anchor: "start", yOffset: -5};
                 var p = o[d].pop89;
                 var n = o[d].placeName;
                 var supressNames = [
@@ -601,6 +615,7 @@
                 var alignLeft = ["Potsdam","Gotha","Zwickau"];
                 var alignCenter = ["Erfurt","Weimar","Karl-Marx-Stadt"];
                 if (supressNames.indexOf(n) > -1) {continue;}
+                if ((this.width < 700 || this.height < 540) && p < 100000) {continue;}
                 if (alignLeft.indexOf(n) > -1) {s.anchor = "end";}
                 if (alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
 
@@ -611,21 +626,21 @@
                     case (p < 300000) : s.class = "pl100kto300k";s.r = 4;s.size = 10;s.showLabel= true; break;
                     default :           s.class = "pl300kplus";s.r = 4;s.size = 12;s.showLabel= true; break;
                 }
+                if (n === "Zwickau") {s.yOffset = 10};
+
                 dots.append("circle")
                     .attr({
                         cx: o[d].pCoords[0],
                         cy: o[d].pCoords[1],
                         r: s.r
                     })
-                //console.log(o[d]);
                 if (s.showLabel) {
-                    console.log(s.anchor);
                     labels.append("text")
                         .attr({"class": s.class})
                         .attr({"text-anchor": s.anchor})
                         .attr({
                             x: o[d].pCoords[0] ,
-                            y: o[d].pCoords[1] - 5
+                            y: o[d].pCoords[1] + s.yOffset
                         })
                         .style({
                             "font-size": s.size + "px",
