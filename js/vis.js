@@ -54,7 +54,7 @@
         this.options.loop = this.options.loop === undefined ? false : this.options.loop;
         this.options.containerId = this.options.containerId || 'vis';
         this.options.maxRadiusRatio = this.options.maxRadiusRatio || 0.08;
-        this.debug =  this.options.debug || false;
+        this.debug = this.options.debug || false;
         this.eventDates = [
             // add more timed event here if needed
             {   name: "Der Mauerfall (11.9.'89)",
@@ -425,18 +425,13 @@
             info.classed('hide', !info.classed('hide'));
         };
         this.ui.rewind.on('click', rewind);
-        this.ui.rewind.on('touchstart', rewind);
         this.ui.play.on('click', playPause);
-        this.ui.play.on('touchstart', playPause);
         this.ui.fast_fwd.on('click', fastForward);
-        this.ui.fast_fwd.on('touchstart', fastForward);
 
         this.ui.info = d3.select('#info-icon');
         this.ui.info.on('click', showInfo);
-        this.ui.info.on('touchstart', showInfo);
         this.ui.info_close = d3.select('.close');
         this.ui.info_close.on('click', showInfo);
-        this.ui.info_close.on('touchstart', showInfo);
     };
 
     Vis.prototype.updateUI = function() {
@@ -595,12 +590,12 @@
 
     Vis.prototype.halfSpeed = function() {
         this.options.daysPerSecond /= 2;
-        console.log("increase speed",this.options.daysPerSecond);
+        if (this.debug) { console.log("increase speed",this.options.daysPerSecond); }
         this.play();
     };
     Vis.prototype.doubleSpeed = function() {
         this.options.daysPerSecond *= 2;
-        console.log("decrease speed",this.options.daysPerSecond);
+        if (this.debug) { console.log("decrease speed",this.options.daysPerSecond); }
         this.play();
     };
 
