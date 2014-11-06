@@ -25,8 +25,8 @@ html, body {
 
 #ui_currentdate {
     position: absolute;
-    width: 200px;
-    height: 100px;
+    width: 150px;
+    height: 96px;
     top: 20px;
     left: 20px;
     background-color: hsla(0,0%,30%,0.3);
@@ -40,24 +40,40 @@ html, body {
  font-weight: 800;
 }
 
-
+circle.pl300kplus {
+    fill: #330606;
+    stroke: black;
+    stroke-width: 1px;
+}
+circle.pl100kto300k {
+    fill: none;
+    stroke: black;
+    stroke-width: 1px;
+}
 .date span {
     position: absolute;
     display:block;
 }
 .date span.dayofweek {
+    text-align:right;
+    display:inline;
+    padding-left:20px;
      top: 20px;
-     left:20px;
+
 
  }
 .date span.dayofmonth {
+    text-align: right;
+    display: inline;
+    padding-left: 20px;
     top: 40px;
-    left:20px;
 }
-
 .date span.month {
     top: 40px;
-    left:48px;
+    text-align: left;
+    display: inline;
+    padding-left: 43px;
+    top: 40px;
 }
 .date span.year {
     top: 60px;
@@ -153,8 +169,13 @@ html, body {
     opacity: 0.2;
 }
 
+.legend circle {
+    stroke-opacity: 0.5;
+    stroke-width: 0.5;
+    stroke-color: white;
+}
+
 .legend text {
     fill: #777;
     font: 10px sans-serif;
-    text-anchor: middle;
 }

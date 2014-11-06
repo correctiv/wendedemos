@@ -345,8 +345,14 @@
             .attr("class", "markers");
 
 
-        var legendOffset = [this.width * 4/5,this.height * 1/6];
+        var legendOffset = [this.width * 6/7,this.height * 1/6];
         var maxR = this.scales.rPop(100000);
+        var anchor = "middle";
+        var xOffset = 0;
+        if (this.width < 700 || this.height < 700) {
+            anchor = "end";
+            xOffset = - maxR - 5;
+        }
         this.legend = this.svg.append("g")
             .attr("transform", "translate("+
             legendOffset[0] +"," + legendOffset[1] +")")
@@ -356,10 +362,10 @@
         this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(20000)-maxR,r : this.scales.rPop(20000)});
         //this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(10000)-maxR,r : this.scales.rPop(10000)});
         this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(5000)-maxR,r : this.scales.rPop(5000)});
-        this.legend.append("text").text("100 000").attr({"text-anchor": "middle", x : 0, y : maxR * 5/6 } );
-        this.legend.append("text").text("50 000").attr({"text-anchor": "middle", x : 0, y : this.scales.rPop(50000) * 11/6 - maxR } );
-        this.legend.append("text").text("20 000").attr({"text-anchor": "middle", x : 0, y : this.scales.rPop(20000) * 8/5 - maxR  } );
-        this.legend.append("text").text("5000").attr({"text-anchor": "middle", x : 0, y : this.scales.rPop(5000) * 6/5 - maxR  } );
+        this.legend.append("text").text("100 000").attr({"text-anchor": anchor, x : xOffset, y : maxR * 5/6 } );
+        this.legend.append("text").text("50 000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(50000) * 11/6 - maxR } );
+        this.legend.append("text").text("20 000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(20000) * 8/5 - maxR  } );
+        this.legend.append("text").text("5000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(5000) * 6/5 - maxR  } );
 
         this.mapReady = true;
         if (this.debug) {
@@ -660,13 +666,14 @@
                 switch (true) {
                     case (p < 10000) :  s.class = "smaller10k";s.r = 1;s.size = 6;s.showLabel= false; break;
                     case (p < 50000) :  s.class = "pl10kto50k";s.r = 2;s.size = 7;s.showLabel= false; break;
-                    case (p < 100000) : s.class = "pl50kto100k";s.r = 3;s.size = 8;s.showLabel= true; break;
-                    case (p < 300000) : s.class = "pl100kto300k";s.r = 4;s.size = 10;s.showLabel= true; break;
-                    default :           s.class = "pl300kplus";s.r = 4;s.size = 12;s.showLabel= true; break;
+                    case (p < 100000) : s.class = "pl50kto100k";s.r = 2.5;s.size = 8;s.showLabel= true; break;
+                    case (p < 300000) : s.class = "pl100kto300k";s.r = 3;s.size = 10;s.showLabel= true; break;
+                    default :           s.class = "pl300kplus";s.r = 3;s.size = 12;s.showLabel= true; break;
                 }
                 if (n === "Zwickau") {s.yOffset = 10};
 
                 dots.append("circle")
+                    .attr("class", s.class)
                     .attr({
                         cx: o[d].pCoords[0],
                         cy: o[d].pCoords[1],
