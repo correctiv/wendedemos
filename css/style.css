@@ -15,6 +15,11 @@ html, body {
     font-family: sans-serif;
 }
 
+a, a:visited {
+  color: #333;
+  text-decoration: underline;
+}
+
 #vis {
     height: 100%;
     background: #111;
@@ -214,6 +219,25 @@ circle.pl100kto300k {
 
 .close:hover {
   color: #773333;
+}
+
+.correctiv {
+  background-image: url('../img/correctiv_logo_trans.png');
+  width: 170px;
+  height: 66px;
+  display: block;
+  background-repeat: no-repeat;
+  text-indent: -99999px;
+}
+
+@media only screen and (min--moz-device-pixel-ratio: 2),
+only screen and (-o-min-device-pixel-ratio: 2/1),
+only screen and (-webkit-min-device-pixel-ratio: 2),
+only screen and (min-device-pixel-ratio: 2) {
+  .correctiv {
+    background-size: 170px 66px;
+    background-image: url('../img/correctiv_logo_trans@2x.png');
+  }
 }
 
 
