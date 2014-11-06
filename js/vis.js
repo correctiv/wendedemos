@@ -74,7 +74,7 @@
 
     };
 
-    this.demos = false;
+        this.demos = false;
         this.locations = false;
         this.groups = false;
         this.globalInterval = {
@@ -112,25 +112,24 @@
                 eTypeIsDemo: +d.etype_isdemo
             };
             // calculate best guess for number of participants
-                if (o.partMax === 0 ) {
-                    o.partGuess = self.options.minPart
-                } else {
-                    o.partGuess =  o.partMax;
-                }
+            if (o.partMax === 0) {
+                o.partGuess = self.options.minPart;
+            } else {
+                o.partGuess = o.partMax;
+            }
             o.dayOfMonth = o.date.getDate();
             o.month = o.date.getMonth() + 1;
             o.year = o.date.getFullYear();
             o.dateString = dateToString(o.date);
             return o;
-        },
-            this.demosLoaded.bind(this));
+        }, this.demosLoaded.bind(this));
 
         d3.tsv("assets/data/orte.tsv", function(d) {
             return {
                 // keynames from Header
                 key: d.KEY,
                 name: d.NAME,
-                urlname: (d.NAMEDIFFURL == "") ? d.NAME : d.NAMEURLDIFF, //name for URL at ABL
+                urlname: (d.NAMEDIFFURL === "") ? d.NAME : d.NAMEURLDIFF, //name for URL at ABL
                 bezirk: d.BEZIRK,
                 bezirkSafe: d.BEZIRK === "Frankfurt/Oder" ? "Frankfurt" : d.BEZIRK,
                 bl14: d.BL2014,
@@ -141,6 +140,7 @@
             };
         }, this.locationsLoaded.bind(this));
     };
+
     Vis.prototype.demosLoaded = function(error, rows) {
         // sort events by date
         this.demos =  rows.sort(function(a, b) {return d3.ascending(a.date, b.date);});
@@ -159,13 +159,18 @@
         if (this.debug) {console.log("demos loaded");}
         this.checkLoadState();
     };
+
     Vis.prototype.groupBy = function(rows, fieldname, options) {
         // group unique values as object mith mapped unique groups
         var obj = {};
         options = options || {};
         options.tmp = options.tmp || false; // save to global groups or only return
-        options.keyNameF = options.keyNameF || function(d) { return d[fieldname];};
-        options.rollUpF = options.rollUpF || function(d) {return d};
+        options.keyNameF = options.keyNameF || function (d) {
+            return d[fieldname];
+        };
+        options.rollUpF = options.rollUpF || function (d) {
+            return d;
+        };
         var arr  = d3.nest()
             .key(options.keyNameF)
             .rollup(options.rollUpF)
@@ -173,10 +178,13 @@
             .map(function(d){
                 var group = d.key;
                 var values = d.values;
-                return {'group':group, 'values':values}
+                return {
+                    group: group,
+                    values: values
+                };
             });
         arr.forEach(function(d){
-            obj[d.group] = d.values
+            obj[d.group] = d.values;
         });
         if (options.tmp) {
             return obj;
@@ -184,19 +192,21 @@
             this.groups = this.groups || {};
             this.groups[fieldname] = obj;
         }
-
-
     };
+
     Vis.prototype.locationsLoaded = function(error, rows) {
         var rowsSorted = rows.sort(function(a, b) {
             return d3.ascending(a.key, b.key);
         });
         var locations = {};
-        rowsSorted.forEach(function(r){locations[r.key] = r;});
+        rowsSorted.forEach(function (r) {
+            locations[r.key] = r;
+        });
         this.locations = locations;
         if (this.debug) {console.log("locations loaded");}
         this.checkLoadState();
     };
+
     Vis.prototype.joinArrayWithLocationKeyObj = function(arr, l) {
         arr.forEach(
             function (d) {
@@ -220,13 +230,16 @@
             });
     };
 
-
     Vis.prototype.drawMap = function (error, ddr) {
-        if (error) {return console.error(error);}
+        if (error) {
+            return console.error(error);
+        }
         var width = this.target.elem.offsetWidth,
             height = this.target.elem.offsetHeight;
         var dim = Math.min(width, height);
-        this.scales.rPop = d3.scale.sqrt().domain([100, 100000]).range([2, dim*this.options.maxRadiusRatio])
+        this.scales.rPop = d3.scale.sqrt()
+            .domain([100, 100000])
+            .range([2, dim * this.options.maxRadiusRatio]);
         var formatNumber = d3.format(",.0f");
         var smallFloat = 1.0e-6;
         this.projection = d3.geo.satellite()
@@ -316,7 +329,9 @@
             .attr("class", "labels");
 
         this.mapReady = true;
-        if (this.debug) {console.log("Map rendered")}
+        if (this.debug) {
+            console.log("Map rendered");
+        }
         this.checkLoadState();
     };
 
@@ -433,12 +448,30 @@
         this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios||{};
         var rTrail = this.currentInterval.trailingBezRatios;
         var flashBaseC = this.options.flashColor;
+
+        var flash = function (b) {
+            return function () {
+                b   //.attr({opacity:0}).transition.delay(Math.random * 30)
+                    .style({
+                        fill: d3.hsl(flashBaseC).brighter(r * 3),
+                        opacity: 0.3
+                    })
+                    .transition()
+                    //.transition.duration(400)
+                    .style({
+                        fill: d3.hsl(baseColor).brighter(rTrail[d] * 3),
+                        opacity: 1
+                    });
+            };
+        };
+
         for(var d in bezRatios) {
             var r = bezRatios[d].ratio;
             // trailing brightness for fallback color
             rTrail[d] = rTrail[d] === undefined ? r :
             rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
             var id = "#" + d;
+
             var b = land.select(id);
           //  setTimeout(function(){
             b   //.attr({opacity:0}).transition.delay(Math.random * 30)
@@ -454,11 +487,14 @@
                         // (this.scales.rel(rTrail[d]) > 0.2)? 0.2 : this.scales.rel(rTrail[d]);
                     ),
                     opacity: 1
-                })
+                });
         //);
             // TODO get timeout asynchronously working,
             // otherwise too much delay
             //  }, Math.random * 50);
+
+            //     setTimeout(flash(land.select(id)), Math.random * 50);
+
         }
         // ---
         // draw circles
@@ -473,95 +509,106 @@
     };
 
     Vis.prototype.getBezirkeTotalsByDay = function() {
+        var getRollUp = function (d) {
+            return {
+                "count": d.length,
+                "total": d3.sum(d, function (d) {
+                    return d.partGuess;
+                }),
+                "ratio": d3.sum(d, function (d) {
+                    return d.ratioBez;
+                })
+            };
+        };
+
         var g = this.groups.dateString;
         var o = {};
         for (var key in g) {
             o[key] = this.groupBy(g[key], "bezirkSafe", {
                 tmp: true,
-                rollUpF: function (d) {
-                    return {
-                        "count": d.length,
-                        "total": d3.sum(d, function (d) {
-                            return d.partGuess;
-                        }),
-                        "ratio": d3.sum(d, function (d) {
-                            return d.ratioBez;
-                        })
-                    }
-                }
+                rollUpF: getRollUp
             });
         }
         return o;
     };
 
-    Vis.prototype.checkLoadState = function() {
-        if (this.debug) {console.log("Check load state");}
-        // considered hacky, replace with ifs if needed;
-        switch(true) {
-            case (this.demos && this.locations && !this.groups):
-                if (this.debug) {console.log(" -- join records");}
-                this.joinArrayWithLocationKeyObj(this.demos, this.locations);
-                if (this.debug) {console.log(" -- group by date");}
-                this.groupBy(this.demos, "dateString");
-                // calculate totals by Bezirk
-                this.groups.bezirkeTotals = this.groupBy(this.demos, "bezirkSafe", {
-                    tmp : true,
-                    rollUpF : function(d) {
-                        return {
-                            "length": d.length,
-                            "ratio": d3.sum(d, function(d) {
-                                return d.ratioBez;
-                            }),
-                            "total": d3.sum(d, function(d) {
-                                return d.partGuess;
-                            })
-                        }
+    Vis.prototype.checkLoadState = function () {
+        if (this.debug) {
+            console.log("Check load state");
+        }
+        if (this.demos && this.locations && !this.groups) {
+            if (this.debug) {
+                console.log(" -- join records");
+            }
+            this.joinArrayWithLocationKeyObj(this.demos, this.locations);
+            if (this.debug) {
+                console.log(" -- group by date");
+            }
+            this.groupBy(this.demos, "dateString");
+            // calculate totals by Bezirk
+            this.groups.bezirkeTotals = this.groupBy(this.demos, "bezirkSafe", {
+                tmp: true,
+                rollUpF: function (d) {
+                    return {
+                        "length": d.length,
+                        "ratio": d3.sum(d, function (d) {
+                            return d.ratioBez;
+                        }),
+                        "total": d3.sum(d, function (d) {
+                            return d.partGuess;
+                        })
+                    };
+                }
+            });
+            // calculate totals by day and Bezirk
+            this.groups.bezirkeTotalsByDay = this.getBezirkeTotalsByDay();
+            // calculate totals by day
+            this.groups.totalsByDay = this.groupBy(this.demos, "dateString", {
+                tmp: true,
+                rollUpF: function (d) {
+                    return {
+                        "length": d.length,
+                        "total": d3.sum(d, function (d) {
+                            return d.partGuess;
+                        })
+                    };
+                }
+            });
+            this.groups.totalsByPlace = this.groupBy(this.demos, "placeKey", {
+                tmp: true,
+                rollUpF: function (d) {
+                    return {
+                        "length": d.length,
+                        "name": d.placename,
+                        "pCoords": d.pCoords,
+                        "total": d3.sum(d, function (d) {
+                            return d.partGuess;
+                        }),
+                        "totalRel": d3.sum(d, function (d) {
+                            return d.ratio;
+                        })
+                    }
+                }
+            });
+            this.labelLayer.data(this.groups.totalsByPlace).enter().append("text")
+                .attr({
+                    text: function (d) {
+                        return d.name;
+                    },
+                    x: function (d) {
+                        return d.pCoords[0];
+                    },
+                    y: function (d) {
+                        return d.pCoords[1];
                     }
                 });
-                // calculate totals by day and Bezirk
-                this.groups.bezirkeTotalsByDay = this.getBezirkeTotalsByDay();
-                // calculate totals by day
-                this.groups.totalsByDay = this.groupBy(this.demos, "dateString", {
-                    tmp : true,
-                    rollUpF : function(d) {
-                        return {
-                            "length": d.length,
-                            "total": d3.sum(d, function(d) {
-                                return d.partGuess;
-                            })
-                        }
-                    }
-                });
-                this.groups.totalsByPlace = this.groupBy(this.demos, "placeKey", {
-                    tmp : true,
-                    rollUpF : function(d) {
-                        return {
-                            "length": d.length,
-                            "name": d.placename,
-                            "pCoords": d.pCoords,
-                            "total": d3.sum(d, function(d) {
-                                return d.partGuess;
-                            }),
-                            "totalRel": d3.sum(d, function(d) {
-                                return d.ratio;
-                            })
-                        }
-                    }
-                });
-this.labelLayer.data(this.groups.totalsByPlace).enter().append("text")
-    .attr({
-        text : function(d) {return d.name;},
-        x : function(d) {return d.pCoords[0];},
-        y : function(d) {return d.pCoords[1];}
-        });
-                if (this.debug) {console.log(" -- start animation");}
-                this.showInterval();
-                break;
-            case (!this.mapReady || !this.demos || !this.locations) :
-                if (this.debug) {console.log(" -- not ready yet");}
-                break;
-            default:
-                console.error("unhandled state:", this);
+
+        }
+        if (this.demos && this.locations && this.mapReady) {
+            if (this.debug) {
+                console.log(" -- start animation");
+            }
+            this.showInterval();
         }
     };
 
