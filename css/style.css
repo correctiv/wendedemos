@@ -212,6 +212,10 @@ circle.pl100kto300k {
   cursor: pointer;
 }
 
+.close:hover {
+  color: #773333;
+}
+
 
 [class^="icon-"]:before, [class*=" icon-"]:before {
   font-family: "controls";
