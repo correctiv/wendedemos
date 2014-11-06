@@ -416,12 +416,23 @@
             }
             self.play();
         };
+        var showInfo = function() {
+            var info = d3.select('#info');
+            info.classed('hide', !info.classed('hide'));
+        };
         this.ui.rewind.on('click', rewind);
         this.ui.rewind.on('touchstart', rewind);
         this.ui.play.on('click', playPause);
         this.ui.play.on('touchstart', playPause);
         this.ui.fast_fwd.on('click', fastForward);
         this.ui.fast_fwd.on('touchstart', fastForward);
+
+        this.ui.info = d3.select('#info-icon');
+        this.ui.info.on('click', showInfo);
+        this.ui.info.on('touchstart', showInfo);
+        this.ui.info_close = d3.select('.close');
+        this.ui.info_close.on('click', showInfo);
+        this.ui.info_close.on('touchstart', showInfo);
     };
 
     Vis.prototype.updateUI = function() {

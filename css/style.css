@@ -12,6 +12,7 @@
 html, body {
     height: 100%;
     margin: 0;
+    font-family: sans-serif;
 }
 
 #vis {
@@ -23,7 +24,6 @@ html, body {
 }
 
 .ui {
-    font-family: sans-serif;
     color : white;
     font-weight: 600;
 }
@@ -89,7 +89,7 @@ circle.pl100kto300k {
 }
 
 .land #BRD {
-    fill: #222;
+    fill: #454545;
     opacity: 0.5;
 }
 
@@ -180,6 +180,38 @@ circle.pl100kto300k {
     font: 10px sans-serif;
 }
 
+#info-icon {
+  position: absolute;
+  bottom: 0.3em;
+  right: 0.3em;
+  color: #fff;
+  cursor: pointer;
+}
+
+#info-icon:hover {
+  color: #773333;
+}
+
+#info {
+  position: absolute;
+  bottom: 5%;
+  right: 10%;
+  padding: 2em;
+  width: 70%;
+  max-width: 24em;
+  background-color: #fff;
+  color: #333;
+}
+
+#info.hide {
+  display: none;
+}
+
+.close {
+  float: right;
+  cursor: pointer;
+}
+
 
 [class^="icon-"]:before, [class*=" icon-"]:before {
   font-family: "controls";
@@ -216,3 +248,4 @@ circle.pl100kto300k {
 .icon-pause:before { content: '\e801'; } /* '' */
 .icon-to-start:before { content: '\e802'; } /* '' */
 .icon-fast-fw:before { content: '\e803'; } /* '' */
+.icon-info-circled:before { content: '\e804'; } /* '' */
