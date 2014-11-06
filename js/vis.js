@@ -45,7 +45,7 @@
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
         this.options.tickerEnabled = this.options.tickerEnabled || false;  // override start date
-        this.options.daysPerSecond = this.options.daysPerSecond || 4;
+        this.options.daysPerSecond = this.options.daysPerSecond || 2;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
         this.options.loop = this.options.loop === undefined ? false : this.options.loop;
@@ -54,11 +54,16 @@
         this.debug =  this.options.debug || false;
         this.eventDates = [
             // add more timed event here if needed
-            {
-                name: "Der Mauerfall (11.9.'89)",
+            {   name: "Der Mauerfall (11.9.'89)",
                 dateString: "1989-11-09",
                 fn : "mauerFall",
                 resetFn : "mauerReset"
+                // todo pass function properly #pass
+            },
+            {   name: "Montagsdemo 9.10. Leipzig",
+                dateString: "1989-10-09",
+                fn : "halfSpeed",
+                resetFn : "doubleSpeed"
                 // todo pass function properly #pass
             }
         ];
@@ -75,7 +80,6 @@
         };
         this.scales = {
             rel : d3.scale.linear().domain([0, 0.5]).range([0.1, 1])
-
         };
 
         this.demos = false;
@@ -312,9 +316,6 @@
         grid.append("path")
             .datum(graticule)
             .attr("d", path);
-        this.tickerLayer = this.svg.append("g")
-            .attr("class", "ticker");
-
         this.svg.append("g")
             .attr("class", "land")
             .selectAll('path')
@@ -336,7 +337,8 @@
             .attr("class", "staatsgrenze")
             .attr("d", path);
 
-
+        this.tickerLayer = this.svg.append("g")
+            .attr("class", "ticker");
         this.labelLayer = this.svg.append("g")
             .attr("class", "labels");
         this.markerLayer = this.svg.append("g")
@@ -394,7 +396,7 @@
             //  if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
             // check for timed events
             self.eventDates.forEach( function(d) {
-                // if (self.debug) {console.info(currentDateString, d.dateString);}
+                //if (self.debug) {console.info(currentDateString, d.dateString);}
                 if (d.dateString === currentDateString) {
                     if (self.debug) {console.info("found event", d.dateString, d.name);}
                     // todo pass function properly #pass
@@ -475,7 +477,7 @@
             // todo figure out timeout asynchronity
              setTimeout(function() {
             self.renderEvents(d);
-            }, Math.random() * 1000/self.daysPerSecond)
+            }, Math.random() * 1000/self.options.daysPerSecond)
         });
     };
 
@@ -527,6 +529,21 @@
     };
     Vis.prototype.mauerReset = function() {
         this.svg.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
+    };
+
+    Vis.prototype.halfSpeed = function() {
+        this.options.daysPerSecond /= 2;
+        var tmp = [this.currentDate, this.currentInterval.dates[1]];
+        clearInterval(this.timer);
+        console.log("increase speed",this.options.daysPerSecond);
+        this.showInterval(tmp);
+    };
+    Vis.prototype.doubleSpeed = function() {
+        this.options.daysPerSecond *= 2;
+        var tmp = [this.currentDate, this.currentInterval.dates[1]];
+        clearInterval(this.timer);
+        console.log("decrease speed",this.options.daysPerSecond);
+        this.showInterval(tmp);
     };
 
     Vis.prototype.getBezirkeTotalsByDay = function() {
