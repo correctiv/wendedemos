@@ -1,3 +1,14 @@
+@font-face {
+  font-family: 'controls';
+  src: url('../font/controls.eot?6005235');
+  src: url('../font/controls.eot?6005235#iefix') format('embedded-opentype'),
+       url('../font/controls.woff?6005235') format('woff'),
+       url('../font/controls.ttf?6005235') format('truetype'),
+       url('../font/controls.svg?6005235#controls') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
 html, body {
     height: 100%;
     margin: 0;
@@ -25,19 +36,20 @@ html, body {
 
 #ui_currentdate {
     position: absolute;
-    width: 150px;
-    height: 96px;
-    top: 20px;
-    left: 20px;
+    width: 7em;
+    top: 0.5em;
+    left: 0.5em;
     background-color: hsla(0,0%,30%,0.3);
+    font-size: 4vw;
+    padding: 0.5em;
 }
 
-.legend text {
-    fill: white;
+.icon-to-start {
+  float: right;
 }
 
-.labeltext .pl300kplus {
- font-weight: 800;
+.controls {
+  padding-bottom: 0.5em;
 }
 
 circle.pl300kplus {
@@ -50,35 +62,23 @@ circle.pl100kto300k {
     stroke: black;
     stroke-width: 1px;
 }
-.date span {
-    position: absolute;
-    display:block;
-}
-.date span.dayofweek {
-    text-align:right;
-    display:inline;
-    padding-left:20px;
-     top: 20px;
 
+.controls span {
+  cursor: pointer;
+}
 
- }
-.date span.dayofmonth {
-    text-align: right;
-    display: inline;
-    padding-left: 20px;
-    top: 40px;
+.controls span.active {
+  color: #773333;
 }
-.date span.month {
-    top: 40px;
-    text-align: left;
-    display: inline;
-    padding-left: 43px;
-    top: 40px;
+
+.legend text {
+    fill: white;
 }
-.date span.year {
-    top: 60px;
-    left:20px;
+
+.labeltext .pl300kplus {
+ font-weight: 800;
 }
+
 
 .land {
     fill: #222;
@@ -179,3 +179,40 @@ circle.pl100kto300k {
     fill: #777;
     font: 10px sans-serif;
 }
+
+
+[class^="icon-"]:before, [class*=" icon-"]:before {
+  font-family: "controls";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+
+.icon-play:before { content: '\e800'; } /* '' */
+.icon-pause:before { content: '\e801'; } /* '' */
+.icon-to-start:before { content: '\e802'; } /* '' */
+.icon-fast-fw:before { content: '\e803'; } /* '' */

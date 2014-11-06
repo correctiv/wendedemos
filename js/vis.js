@@ -45,6 +45,8 @@
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
         this.options.tickerEnabled = this.options.tickerEnabled || false;  // override start date
+        this.options.defaultDaysPerSecond = this.options.defaultDaysPerSecond || 2;
+        this.options.fastFwdFactor = this.options.fastFwdFactor || 4;
         this.options.daysPerSecond = this.options.daysPerSecond || 2;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
@@ -100,6 +102,7 @@
     Vis.prototype.init = function(){
         this.width = this.target.elem.offsetWidth;
         this.height = this.target.elem.offsetHeight;
+        this.playing = false;
 
         this.dim = Math.min(this.width, this.height);
         var smallFloat = 1.0e-6;
@@ -273,15 +276,15 @@
             .projection(projection);
         var container = d3.select("#" + this.options.containerId);
         this.ui = {};
-        this.ui.datebox = container.append("div")
-            .attr("class","ui")
-            .attr("id","ui_currentdate");
-
-        this.ui.datetext = this.ui.datebox.append("p").classed("date",true);
-        this.ui.datetext.dayOfWeek = this.ui.datetext.append("span").classed("dayofweek",true);
-        this.ui.datetext.day = this.ui.datetext.append("span").classed("dayofmonth",true);
-        this.ui.datetext.month = this.ui.datetext.append("span").classed("month",true);
-        this.ui.datetext.year = this.ui.datetext.append("span").classed("year",true);
+        this.ui.play = container.select('#play-pause');
+        this.ui.fast_fwd = container.select('#fast-fw');
+        this.ui.rewind = container.select('#rewind');
+        this.ui.datebox = container.select("#ui_currentdate");
+        this.ui.datetext = container.select('.date');
+        this.ui.datetext.dayOfWeek = container.select('.dayofweek');
+        this.ui.datetext.day = container.select('.dayofmonth');
+        this.ui.datetext.month = container.select('.month');
+        this.ui.datetext.year = container.select('.year');
 
         this.svg = container.append("svg")
             .attr({
@@ -303,7 +306,7 @@
         // some inline svg styling happening here
         // breaks in chrome fullscreen
         var grid = this.svg.append("g")
-            .classed("graticule",true);
+            .classed("graticule", true);
         grid.append("path")
             .datum(graticule)
             .attr("class", "blur")
@@ -389,6 +392,46 @@
         });
     };
 
+    Vis.prototype.setupControls = function() {
+        var self = this;
+        var rewind = function() {
+            self.currentDate = new Date(self.currentInterval.dates[0]);
+            self.updateUI();
+        };
+        var playPause = function() {
+            if (self.playing) {
+                self.pause();
+            } else {
+                self.play();
+            }
+            self.playing = !self.playing;
+        };
+        var fastForward = function() {
+            if (self.options.daysPerSecond === self.options.defaultDaysPerSecond) {
+                self.options.daysPerSecond = self.options.defaultDaysPerSecond * self.options.fastFwdFactor;
+                self.ui.fast_fwd.classed('active', true);
+            } else {
+                self.options.daysPerSecond = self.options.defaultDaysPerSecond;
+                self.ui.fast_fwd.classed('active', false);
+            }
+            self.play();
+        };
+        this.ui.rewind.on('click', rewind);
+        this.ui.rewind.on('touch', rewind);
+        this.ui.play.on('click', playPause);
+        this.ui.play.on('touch', playPause);
+        this.ui.fast_fwd.on('click', fastForward);
+        this.ui.fast_fwd.on('touch', fastForward);
+    };
+
+    Vis.prototype.updateUI = function() {
+        var strObj = dateToLocale(this.currentDate, this.options.locale);
+        this.ui.datetext.dayOfWeek.text(strObj.dayOfWeekString);
+        this.ui.datetext.day.text(strObj.dayOfMonth + ".");
+        this.ui.datetext.month.text(strObj.monthString);
+        this.ui.datetext.year.text(strObj.year);
+    };
+
     Vis.prototype.showInterval = function(arr) {
         var self = this;
         var i = 1;
@@ -410,12 +453,7 @@
                     self[d.fn]();
                 }
             });
-            // update UI
-            var strObj = dateToLocale(self.currentDate,self.options.locale);
-            self.ui.datetext.dayOfWeek.text(strObj.dayOfWeekString);
-            self.ui.datetext.day.text(strObj.dayOfMonth + ".");
-            self.ui.datetext.month.text(strObj.monthString);
-            self.ui.datetext.year.text(strObj.year);
+            self.updateUI();
             // trigger rendering
             if (self.groups.dateString[currentDateString]) {self.showDate(currentDateString);}
             // end interval;
@@ -427,7 +465,7 @@
                     if (self.debug) {console.log("new loop",interval[0]);}
                 } else {
                     if (self.debug) {console.log("exit interval loop based on date loop");}
-                    window.clearInterval(self.timer);
+                    self.pause();
                 }
             } else {
                 self.currentDate.setDate(self.currentDate.getDate() + 1);
@@ -438,6 +476,8 @@
             }
             i += 1;
         }, parseInt(1000 / self.options.daysPerSecond));
+        this.ui.play.classed('icon-play', false).classed('icon-pause', true);
+        this.playing = true;
     };
 
     Vis.prototype.renderEvents = function(d) {
@@ -482,9 +522,9 @@
         //console.log (arr.length, arr[0].dateString, arr[0].placename);
         arr.forEach(function(d) {
             // todo figure out timeout asynchronity
-             setTimeout(function() {
-            self.renderEvents(d);
-            }, Math.random() * 1000/self.options.daysPerSecond)
+            setTimeout(function() {
+                self.renderEvents(d);
+            }, Math.random() * 1000/self.options.daysPerSecond);
         });
     };
 
@@ -540,16 +580,23 @@
 
     Vis.prototype.halfSpeed = function() {
         this.options.daysPerSecond /= 2;
-        var tmp = [this.currentDate, this.currentInterval.dates[1]];
-        clearInterval(this.timer);
         console.log("increase speed",this.options.daysPerSecond);
-        this.showInterval(tmp);
+        this.play();
     };
     Vis.prototype.doubleSpeed = function() {
         this.options.daysPerSecond *= 2;
-        var tmp = [this.currentDate, this.currentInterval.dates[1]];
-        clearInterval(this.timer);
         console.log("decrease speed",this.options.daysPerSecond);
+        this.play();
+    };
+
+    Vis.prototype.pause = function() {
+        window.clearInterval(this.timer);
+        this.ui.play.classed('icon-play', true).classed('icon-pause', false);
+    };
+
+    Vis.prototype.play = function() {
+        var tmp = [this.currentDate, this.currentInterval.dates[1]];
+        window.clearInterval(this.timer);
         this.showInterval(tmp);
     };
 
@@ -634,7 +681,7 @@
                         "totalRel": d3.sum(d, function (d) {
                             return d.ratio;
                         })
-                    }
+                    };
                 }
             });
             //console.log(this.groups.totalsByPlace[1]);
@@ -670,7 +717,9 @@
                     case (p < 300000) : s.class = "pl100kto300k";s.r = 3;s.size = 10;s.showLabel= true; break;
                     default :           s.class = "pl300kplus";s.r = 3;s.size = 12;s.showLabel= true; break;
                 }
-                if (n === "Zwickau") {s.yOffset = 10};
+                if (n === "Zwickau") {
+                    s.yOffset = 10;
+                }
 
                 dots.append("circle")
                     .attr("class", s.class)
@@ -678,7 +727,7 @@
                         cx: o[d].pCoords[0],
                         cy: o[d].pCoords[1],
                         r: s.r
-                    })
+                    });
                 if (s.showLabel) {
                     labels.append("text")
                         .attr({"class": s.class})
@@ -701,6 +750,7 @@
             if (this.debug) {
                 console.log(" -- start animation");
             }
+            this.setupControls();
             this.showInterval();
         }
     };

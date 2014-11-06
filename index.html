@@ -1,17 +1,35 @@
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">
+    <title>Wendedemos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 <body>
-<div id="vis"></div>
+<div id="vis">
+  <div class="ui" id="ui_currentdate">
+    <div class="controls">
+      <span id="play-pause" class="icon-play"></span>
+      <span id="fast-fw" class="icon-fast-fw"></span>
+      <span id="rewind" class="icon-to-start"></span>
+    </div>
+    <div class="date">
+      <div class="dayofweek"></div>
+      <div>
+        <span class="dayofmonth"></span>
+        <span class="month"></span>
+      </div>
+      <span class="year"></span>
+    </div>
+  </div>
+</div>
 <script src="js/lib/d3.min.js" charset="utf-8"></script>
 <script src="js/lib/d3.geo.projection.v0.min.js" charset="utf-8"></script>
 <script src="js/lib/topojson.js" charset="utf-8"></script>
 <script src="js/vis.js" charset="utf-8"></script>
 <script>
   var vis = new Vis({
-      tickerEnabled: true
+      tickerEnabled: document.location.search.indexOf('ticker') !== -1
   });
   vis.init();
 </script>
