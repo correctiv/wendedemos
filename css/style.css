@@ -145,6 +145,13 @@ html, body {
     stroke: #ccc;
 }
 
+.tickerg text {
+    fill: green;
+    font-weight: 800;
+    font: 10px monospace;
+    text-anchor: middle;
+}
+
 .legend text {
     fill: #777;
     font: 10px sans-serif;

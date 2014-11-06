@@ -283,7 +283,7 @@
             .attr({
                 width: this.width,
                 height: this.height,
-                "text-rendering": "geometricPrecision"
+                "text-rendering": "auto"
             });
 
         // svg filters have to be inline
@@ -338,6 +338,10 @@
             .attr("class", "labels");
         this.markerLayer = this.svg.append("g")
             .attr("class", "markers");
+
+        this.tickerLayer = this.svg.append("g")
+            .attr("class", "ticker");
+
         var legendOffset = [this.width * 4/5,this.height * 1/6];
         var maxR = this.scales.rPop(100000);
         this.legend = this.svg.append("g")
@@ -426,9 +430,23 @@
         }, parseInt(1000 / self.options.daysPerSecond));
     };
 
-    Vis.prototype.renderCircle = function(d) {
+    Vis.prototype.renderEvents = function(d) {
         var self = this;
-
+        var pos = {
+            x : [this.width * 1.2 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
+            y : this.height/4 * Math.random()
+        };
+        if ( d.eRemarks !== "") {
+            var tg = self.tickerLayer.append("g");
+            tg.attr({"class": "tickerg"});
+            tg.append("text").attr({
+                "text-anchor": "start",
+                x: pos.x[0],
+                y: pos.y
+            }).text("+++" + d.placeName + ( + d.dateString) + d.partGuess + d.eRemarks + "+++")
+                .transition().ease("linear").duration(15000)
+                .attr({x: pos.x[1]}).remove();
+        }
         self.markerLayer.append("circle")
             .attr({
                 r : 0,
@@ -455,7 +473,7 @@
         arr.forEach(function(d) {
             // todo figure out timeout asynchronity
              setTimeout(function() {
-            self.renderCircle(d);
+            self.renderEvents(d);
             }, Math.random() * 1000/self.daysPerSecond)
         });
     };
