@@ -406,7 +406,7 @@
         arr.forEach(function(d) {
             setTimeout(function() {
                 self.renderCircle(d);
-            }, Math.random() * 500)
+            }, Math.random() * 50)
         });
     };
 
@@ -433,8 +433,10 @@
             rTrail[d] * (1 - this.options.trailFallOff) + r;
             var id = "#" + d;
             var b = land.select(id);
-            b.style({
-                fill : d3.hsl(flashBaseC).brighter(r * 10),
+            setTimeout(function(){
+            b   //.attr({opacity:0}).transition.delay(Math.random * 30)
+            .style({
+                fill : d3.hsl(flashBaseC).brighter(r * 3),
                 opacity : 0.3
             })
                 .transition()
@@ -444,6 +446,7 @@
                     opacity: 1
                 }
             );
+            }, Math.random * 50);
         }
         // ---
         // draw circles

@@ -31,13 +31,28 @@ html, body {
     left: 20px;
     background-color: hsla(0,0%,30%,0.3);
 }
+.date span {
+    position: absolute;
+    display:block;
+}
+.date span.dayofweek {
+     top: 20px;
+     left:20px;
 
-.date span .dayofweek {
-    float: left;
-    width: 40px;
-clear: right;
+ }
+.date span.dayofmonth {
+    top: 40px;
+    left:20px;
 }
 
+.date span.month {
+    top: 40px;
+    left:48px;
+}
+.date span.year {
+    top: 60px;
+    left:20px;
+}
 
 .land {
     fill: #222;
