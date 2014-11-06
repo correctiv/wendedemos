@@ -47,6 +47,7 @@
         this.options.tickerEnabled = this.options.tickerEnabled || false;  // override start date
         this.options.defaultDaysPerSecond = this.options.defaultDaysPerSecond || 2;
         this.options.fastFwdFactor = this.options.fastFwdFactor || 4;
+        this.options.autoplay = this.options.autoplay === undefined ? false : this.options.autoplay;
         this.options.daysPerSecond = this.options.daysPerSecond || 2;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
@@ -762,7 +763,9 @@
                 console.log(" -- start animation");
             }
             this.setupControls();
-            this.showInterval();
+            if (this.options.autoplay) {
+                this.showInterval();
+            }
         }
     };
 
