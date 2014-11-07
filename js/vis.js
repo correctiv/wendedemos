@@ -49,6 +49,7 @@
         this.options.fastFwdFactor = this.options.fastFwdFactor || 4;
         this.options.autoplay = this.options.autoplay === undefined ? false : this.options.autoplay;
         this.options.daysPerSecond = this.options.daysPerSecond || 2;
+        this.options.linkABL = this.options.linkABL || false;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
         this.options.loop = this.options.loop === undefined ? false : this.options.loop;
@@ -61,13 +62,12 @@
                 dateString: "1989-11-09",
                 fn : "mauerFall",
                 resetFn : "mauerReset"
-                // todo pass function properly #pass
+
             },
             {   name: "Montagsdemo 9.10. Leipzig",
                 dateString: "1989-10-09",
                 fn : "halfSpeed",
                 resetFn : "doubleSpeed"
-                // todo pass function properly #pass
             }
         ];
         this.eventDates.forEach(function (d) {
@@ -98,6 +98,7 @@
         };
         this.currentDate = null;
         this.mapReady = false;
+        this.ablBaseURL = "http://www.archiv-buergerbewegung.de/index.php/demonstrationen";
     }
 
     Vis.prototype.init = function(){
@@ -243,7 +244,7 @@
                 try {
                     r = l[d.pKey];
                     d.placeName = r.name;
-                    d.placeNameURL = r.urlname;
+                    d.placeNameURL = r.urlName;
                     d.bezirk = r.bezirk;
                     d.bezirkSafe = r.bezirkSafe;
                     d.coords = r.coords;
@@ -387,13 +388,10 @@
     Vis.prototype.resetEventsAtDate = function(date) {
         var self = this;
         this.eventDates.forEach( function(d) {
-            // todo implement timespans for events;
             if (date < d.date) {
                 if (self.debug) {console.info("found future events", d.dateString, d.name);}
-                // todo pass function properly #pass
                 self[d.resetFn]();
             } else if (date > d.date) {
-                // todo pass function properly #pass
                 self[d.fn]();
             }
         });
@@ -454,13 +452,10 @@
         this.resetEventsAtDate();
         this.timer = window.setInterval(function(){
             var currentDateString = dateToString(self.currentDate);
-            //  if (self.debug) {console.log("dateloop",currentDateString, limit, i);}
-            // check for timed events
             self.eventDates.forEach( function(d) {
                 //if (self.debug) {console.info(currentDateString, d.dateString);}
                 if (d.dateString === currentDateString) {
                     if (self.debug) {console.info("found event", d.dateString, d.name);}
-                    // todo pass function properly #pass
                     self[d.fn]();
                 }
             });
@@ -498,7 +493,15 @@
             y : this.height * 0.9 * Math.random()
         };
         if ( d.eRemarks !== "" && this.height > 700 && this.options.tickerEnabled) {
-            self.tickerLayer.append("text").attr({
+            var l = self.tickerLayer;
+             l.append("a").attr({
+                    title: d.placeNameURL,
+                    "xlink:href": self.options.linkABL ?
+                    this.ablBaseURL +
+                    "?Bezirk=" + d.bezirkSafe +
+                    "&datum=" + d.dateString + "&ort=" + d.placeNameURL : "",
+                    "target": "blank"
+                }).append("text").attr({
                 "text-anchor": "start",
                 x: pos.x[0],
                 y: pos.y
@@ -521,7 +524,6 @@
                 r : self.scales.rPop(d.partGuess),
                 opacity : 1
             })
-            // todo insert custom timer for less load
             .transition().ease("linear").duration(2500)
             .attr({r: self.scales.rPop(d.partGuess*0.8)})
             .style({opacity : 0}).remove();
@@ -530,10 +532,8 @@
 
     Vis.prototype.renderMarkers = function(arr){
         var self = this;
-        //console.log (arr.length, arr[0].dateString, arr[0].placename);
-        arr.forEach(function(d) {
-            // todo figure out timeout asynchronity
-            setTimeout(function() {
+       arr.forEach(function(d) {
+           setTimeout(function() {
                 self.renderEvents(d);
             }, Math.random() * 1000/self.options.daysPerSecond);
         });
@@ -541,7 +541,6 @@
 
 
     Vis.prototype.showDate = function(dateString){
-        var self = this;
         var land = d3.selectAll(".land");
         this.styles = this.styles || {};
         var markers = this.groups.dateString[dateString];
@@ -563,7 +562,6 @@
                 rTrail[d] = rTrail[d] === undefined ? r :
                 rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
                 var id = "#" + d;
-// TODO Throw out comments here or get delays with random offset working
                 var b = land.select(id);
                 b.style({
                     fill: d3.hsl(flashBaseC),
@@ -581,7 +579,7 @@
             }
         }
     };
-// todo pass function properly #pass in reference not string
+
     Vis.prototype.mauerFall = function() {
         this.svg.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
     };
@@ -591,12 +589,12 @@
 
     Vis.prototype.halfSpeed = function() {
         this.options.daysPerSecond /= 2;
-        if (this.debug) { console.log("increase speed",this.options.daysPerSecond); }
+        if (this.debug) { console.log("decrease speed",this.options.daysPerSecond); }
         this.play();
     };
     Vis.prototype.doubleSpeed = function() {
         this.options.daysPerSecond *= 2;
-        if (this.debug) { console.log("decrease speed",this.options.daysPerSecond); }
+        if (this.debug) { console.log("increase speed",this.options.daysPerSecond); }
         this.play();
     };
 
@@ -690,7 +688,9 @@
                 rollUpF: function (d) {
                     return {
                         placeName: d[0].placeName,
+                        placeNameURL: d[0].placeNameURL,
                         bezirk: d[0].bezirk,
+                        bezirkSafe: d[0].bezirkSafe,
                         pop89: d[0].pop89,
                         length: d.length,
                         pCoords: d[0].pCoords,
@@ -703,8 +703,6 @@
                     };
                 }
             });
-            //console.log(this.groups.totalsByPlace[1]);
-            // debugger;
             var textNodes = d3.select("svg").select(".labels");
             var dots = textNodes.append("g").attr("class","dots");
             var labels = textNodes.append("g").attr("class","labeltext");
@@ -735,15 +733,21 @@
                     case (p < 100000) : s.class = "pl50kto100k";s.r = 3.5;s.size = 8;s.showLabel= true; break;
                     case (p < 300000) : s.class = "pl100kto300k";s.r = 4;s.size = 10;s.showLabel= true; break;
                     case (p < 700000) : s.class = "pl300kto700k";s.r = 4.5;s.size = 10;s.showLabel= true; break;
-                    default :           s.class = "plus700k";s.r = 0;s.size = 12;s.showLabel= true; break;
+                    default :           s.class = "plus700k";s.r = 4.5;s.size = 12;s.showLabel= true; break;
                 }
                 if (n === "Zwickau") {
                     s.yOffset = 10;
                 }
-
-                dots.append("circle")
-                    .attr("class", s.class)
+                if (this.options.linkABL) {
+                  dots = dots.append("a").attr({
+                        "xlink:href": this.ablBaseURL +
+                        "?Bezirk=" + o[d].bezirkSafe + "&ort=" + o[d].placeNameURL,
+                        "target": "blank"
+                    });
+                }
+                dots.append("circle").attr("class", s.class)
                     .attr({
+                        title: o[d].placeName,
                         cx: o[d].pCoords[0],
                         cy: o[d].pCoords[1],
                         r: s.r
