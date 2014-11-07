@@ -232,10 +232,6 @@ circle.pl100kto300k {
   color: #333;
 }
 
-#info.hide {
-  display: none;
-}
-
 #info h4 {
     margin-top: 5px;
     margin-bottom:0;
@@ -247,6 +243,9 @@ circle.pl100kto300k {
     padding-left:0;
 }
 
+.hide {
+  display: none;
+}
 
 .close {
   float: right;
