@@ -714,7 +714,7 @@
             var labels = textNodes.append("g").attr("class","labeltext");
             var o = this.groups.totalsByPlace;
             for(var d in o) {
-                var s = {anchor: "start", yOffset: -5};
+                var s = {anchor: "start", yOffset: -6};
                 var p = o[d].pop89;
                 var n = o[d].placeName;
                 var supressNames = [
@@ -735,11 +735,11 @@
 
                 switch (true) {
                     case (p < 10000) :  s.class = "smaller10k";s.r = 2;s.size = 6;s.showLabel= false; break;
-                    case (p < 50000) :  s.class = "pl10kto50k";s.r = 3;s.size = 7;s.showLabel= false; break;
-                    case (p < 100000) : s.class = "pl50kto100k";s.r = 3.5;s.size = 8;s.showLabel= true; break;
-                    case (p < 300000) : s.class = "pl100kto300k";s.r = 4;s.size = 10;s.showLabel= true; break;
-                    case (p < 700000) : s.class = "pl300kto700k";s.r = 4.5;s.size = 10;s.showLabel= true; break;
-                    default :           s.class = "plus700k";s.r = 4.5;s.size = 12;s.showLabel= true; break;
+                    case (p < 50000) :  s.class = "pl10kto50k";s.r = 2.5;s.size = 7;s.showLabel= false; break;
+                    case (p < 100000) : s.class = "pl50kto100k";s.r = 3;s.size = 8;s.showLabel= true; break;
+                    case (p < 300000) : s.class = "pl100kto300k";s.r = 3.3;s.size = 10;s.showLabel= true; break;
+                    case (p < 700000) : s.class = "pl300kto700k";s.r = 3.6;s.size = 10;s.showLabel= true; break;
+                    default :           s.class = "plus700k";s.r = 4;s.size = 12;s.showLabel= true; break;
                 }
                 if (n === "Zwickau") {
                     s.yOffset = 10;

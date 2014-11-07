@@ -71,6 +71,7 @@ circle.pl300kto700k{
     stroke: black;
     stroke-width: 1px;
     stroke-opacity: 1;
+    fill-opacity: 0.3;
 }
 
 circle.plus700k{
