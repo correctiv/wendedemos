@@ -496,14 +496,19 @@
         };
         if ( d.eRemarks !== "" && this.height > 700 && this.options.tickerEnabled) {
             var l = self.tickerLayer;
-             l.append("a").attr({
+            var lc = l;
+            if (self.options.linkABL) {
+                lc = l.append("a").attr({
                     title: d.placeNameURL,
-                    "xlink:href": self.options.linkABL ?
-                    this.ablBaseURL +
-                    "?Bezirk=" + d.bezirkSafe +
-                    "&datum=" + d.dateString + "&ort=" + d.placeNameURL : "",
-                    "target": "blank"
-                }).append("text").attr({
+                    "xlink:href": self.options.linkABL ? (
+                            this.ablBaseURL +
+                            "?Bezirk=" + d.bezirkSafe +
+                            "&datum=" + d.dateString + "&ort=" + d.placeNameURL
+                        ) : "",
+                    "target": "_blank"
+                });
+            }
+            lc.append("text").attr({
                 "text-anchor": "start",
                 x: pos.x[0],
                 y: pos.y
@@ -740,14 +745,15 @@
                 if (n === "Zwickau") {
                     s.yOffset = 10;
                 }
+                var dot = dots;
                 if (this.options.linkABL) {
-                  dots = dots.append("a").attr({
+                  dot = dot.append("a").attr({
                         "xlink:href": this.ablBaseURL +
                         "?Bezirk=" + o[d].bezirkSafe + "&ort=" + o[d].placeNameURL,
                         "target": "blank"
                     });
                 }
-                dots.append("circle").attr("class", s.class)
+                dot.append("circle").attr("class", s.class)
                     .attr({
                         title: o[d].placeName,
                         cx: o[d].pCoords[0],
