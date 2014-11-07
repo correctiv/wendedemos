@@ -250,9 +250,9 @@
                     d.coords = r.coords;
                     d.pCoords = r.pCoords;
                     d.pop89 = r.pop89;
-                    d.popBez89 = r.popbez89;
+                    d.popBez89 = r.popBez89;
                     d.ratio = d.partGuess/ d.pop89;
-                    d.ratioBez = d.partGuess/ d.popbez89;
+                    d.ratioBez = d.partGuess/ d.popBez89;
                     d.placeKey = d.pKey;
                 }
                 catch(err) {console.error("key in locations",d.pKey, l[d.pKey],err);}
@@ -387,6 +387,9 @@
 
     Vis.prototype.resetEventsAtDate = function(date) {
         var self = this;
+        // reset filled arrays;
+        this.currentInterval.trailingBezRatios = undefined;
+
         this.eventDates.forEach( function(d) {
             if (date < d.date) {
                 if (self.debug) {console.info("found future events", d.dateString, d.name);}
@@ -556,8 +559,9 @@
             // color bezirke based on participation ratio
             // get base color from css inits;
             // todo fix unexpected clipping for brightness behavior;
-            this.styles.landBaseColor = this.styles.landBaseColor ||
-            land.style('fill');
+            if (this.styles.landBaseColor == undefined) {
+                this.styles.landBaseColor = land.style('fill');
+            }
             var baseColor = this.styles.landBaseColor;
             var bezRatios = this.groups.bezirkeTotalsByDay[dateString];
             this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios || {};
@@ -566,22 +570,17 @@
             for (var d in bezRatios) {
                 var r = bezRatios[d].ratio;
                 // trailing brightness for fallback color
-                rTrail[d] = rTrail[d] === undefined ? r :
-                            rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
+                rTrail[d] = rTrail[d] === undefined ? this.scales.rel(r) : this.scales.rel(r) + rTrail[d];
                 var id = "#" + d;
                 var b = land.select(id);
                 b.style({
-                    fill: d3.hsl(flashBaseC),
-                    //.brighter(this.scales.rel(r)*0.2),
-                    opacity: 0.5
+                    // Flash
+                    fill: d3.hsl(flashBaseC).brighter(Math.min(this.scales.rel(r),1))
                 })
+                    // Fall back to this
                     .transition().duration(800)
                     .style({
-                        fill: d3.hsl(baseColor).brighter(
-                            0.05
-                            // (this.scales.rel(rTrail[d]) > 0.2)? 0.2 : this.scales.rel(rTrail[d]);
-                        ),
-                        opacity: 1
+                        fill: d3.hcl(baseColor).brighter(Math.min(rTrail[d],3))
                     });
             }
         }
