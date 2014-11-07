@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <title>Wendedemos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style media="screen">
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #111;
+        color: #eee;
+        font-family: 'Helvetica', sans-serif;
+        font-size: 16px;
+      }
+      a, a:visited {
+        color: white;
+        text-decoration: none;
+      }
+      h1 {
+        text-align: center;
+        margin: 1em auto 2em;
+        font-size: 400%;
+        line-height: 100%;
+      }
+      .text {
+        margin: 5em auto;
+        max-width: 800px;
+        width: 80%;
+        line-height: 140%;
+      }
+      .pointer {
+        text-align: center;
+        padding: 2em;
+        font-size: 120%;
+        font-weight: bold;
+        text-decoration: underline;
+      }
+      .correctiv {
+        background-image: url('./img/correctiv_logo_white.png');
+        width: 170px;
+        height: 66px;
+        display: block;
+        background-repeat: no-repeat;
+        text-indent: -99999px;
+        opacity: 0;
+      }
+      @media only screen and (min--moz-device-pixel-ratio: 2),
+      only screen and (-o-min-device-pixel-ratio: 2/1),
+      only screen and (-webkit-min-device-pixel-ratio: 2),
+      only screen and (min-device-pixel-ratio: 2) {
+        .correctiv {
+          background-size: 170px 66px;
+          background-image: url('./img/correctiv_logo_white@2x.png');
+        }
+      }
+    </style>
+</head>
+<body>
+  <section class="text">
+    <h1>Der Sturm</h1>
+
+    <p>Als vor 25 Jahren das Unrechtsregime der DDR in sich zusammenbrach, war dies einer friedlichen Revolution geschuldet. Millionen Bürger demonstrierten zwischen Rostock und Chemnitz, von Suhl bis Neubrandenburg. Sie gingen auf die Straße, nicht nur bis zum Mauerfall, sondern weit darüber hinaus, weil sie für ihre Freiheit protestierten und kämpften.</p>
+
+    <p>Heute ist dieser gewaltfreie Volksaufstand und die anschließende Wiedervereinigung in der Erinnerung einiger Menschen zusammengeschnurrt auf das Verhandlungsgeschick weniger Personen. Helmut Kohl, der damalige Bundeskanzler, sagt etwa: Nicht die Bürgerrechts&shy;bewegung hätte „in erster Linie“ die Wende durchgesetzt. Vielmehr sei Gorbatschow durch „die Bücher durchgegangen“ und habe festgestellt, dass er „am Arsch des Propheten“ sei. Vorstellungen, die Revolutionäre im Osten hätten den Zusammenbruch der DDR bewirkt, seien dem „Volkshochschulhirn von Thierse“ entsprungen.</p>
+
+    <p>Das <a href="http://www.archiv-buergerbewegung.de/index.php/demonstrationen">Archiv Bürgerbewegung Leipzig e.V.</a> hat die Daten der Revolution gesammelt: Alle Demonstrationen zwischen dem 13. August 1989 und dem 30. April 1990. Die Besetzungen der Stasizentralen, die Proteste und Märsche. Wir von <a href="https://www.correctiv.org/">CORRECT!V</a> haben diese Daten sichtbar gemacht. Man erkennt, wie der Protest immer größer wird, bis er das ganze Land erfasst, und wie sich aus einzelnen Stimmen ein Sturm der Empörung formt, der die Herrschaft der Honeckers und Mielckes hinwegfegt. Es waren nicht einzelne, es war das Volk, das die Wende brachte.</p>
+
+    <p class="pointer">
+      <a href="#vis">Zur Visualisierung</a>
+    </p>
+  </section>
+
+  <section id="vis">
+    <iframe id="iframe" src="./" style="width: 100%; height: 800px" frameborder="0"></iframe>
+  </section>
+  <script src="js/lib/jquery-1.11.1.js" charset="utf-8"></script>
+  <script charset="utf-8">
+    document.getElementById('iframe').style.height = window.innerHeight + 'px';
+    document.getElementById('iframe').style.height = window.innerHeight + 'px';
+    $('.pointer a').click(function(){
+        $('html, body').animate({
+            scrollTop: $( $.attr(this, 'href') ).offset().top
+        }, 500);
+        return false;
+    });
+  </script>
+</body>
+</html>
