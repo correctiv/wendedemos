@@ -55,9 +55,12 @@
 <script src="js/vis.js" charset="utf-8"></script>
 <script>
   var vis = new Vis({
-      tickerEnabled: document.location.search.indexOf('ticker') !== -1,
+      tickerEnabled:  !(document.location.search.indexOf('noticker') !== -1),
       autoplay: document.location.search.indexOf('autoplay') !== -1,
       flashDistricts: document.location.search.indexOf('flash') !== -1,
+      linkABL: document.location.search.indexOf('link') !== -1,
+      defaultDaysPerSecond: 5,
+      fastFwdFactor: 3
   });
   vis.init();
 </script>

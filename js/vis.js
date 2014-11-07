@@ -48,7 +48,7 @@
         this.options.defaultDaysPerSecond = this.options.defaultDaysPerSecond || 2;
         this.options.fastFwdFactor = this.options.fastFwdFactor || 4;
         this.options.autoplay = this.options.autoplay === undefined ? false : this.options.autoplay;
-        this.options.daysPerSecond = this.options.daysPerSecond || 2;
+        this.options.daysPerSecond = this.options.defaultDaysPerSecond;
         this.options.linkABL = this.options.linkABL || false;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
@@ -64,11 +64,11 @@
                 resetFn : "mauerReset"
 
             },
-            {   name: "Montagsdemo 9.10. Leipzig",
-                dateString: "1989-10-09",
-                fn : "halfSpeed",
-                resetFn : "doubleSpeed"
-            }
+            // {   name: "Montagsdemo 9.10. Leipzig",
+            //     dateString: "1989-10-09",
+            //     fn : "halfSpeed",
+            //     resetFn : "doubleSpeed"
+            // }
         ];
         this.eventDates.forEach(function (d) {
             if (self.debug) {console.log("coercing dates for Events");}
@@ -492,7 +492,7 @@
         var self = this;
         var pos = {
             x : [this.width * 1.5 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
-            y : this.height * 0.9 * Math.random()
+            y : this.height * Math.random() - 15
         };
         if ( d.eRemarks !== "" && this.height > 700 && this.options.tickerEnabled) {
             var l = self.tickerLayer;
@@ -528,18 +528,18 @@
             })
             .transition().ease("cubic-out").duration(900)
             .attr({
-                r : self.scales.rPop(d.partGuess),
+                r : Math.max(0, self.scales.rPop(d.partGuess)),
                 opacity : 1
             })
             .transition().ease("linear").duration(2500)
-            .attr({r: self.scales.rPop(d.partGuess*0.8)})
+            .attr({r: Math.max(0, self.scales.rPop(d.partGuess*0.8))})
             .style({opacity : 0}).remove();
     };
 
 
     Vis.prototype.renderMarkers = function(arr){
         var self = this;
-       arr.forEach(function(d) {
+        arr.forEach(function(d) {
            setTimeout(function() {
                 self.renderEvents(d);
             }, Math.random() * 1000/self.options.daysPerSecond);
@@ -567,7 +567,7 @@
                 var r = bezRatios[d].ratio;
                 // trailing brightness for fallback color
                 rTrail[d] = rTrail[d] === undefined ? r :
-                rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
+                            rTrail[d] * (1 - this.options.trailFallOff) + this.scales.rel(r);
                 var id = "#" + d;
                 var b = land.select(id);
                 b.style({

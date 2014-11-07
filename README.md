@@ -11,7 +11,7 @@ Folgende URL-flags stehen zur Verfügung:
 
 - `autoplay`: spielt die Animation sofort ab
 - `flash`: flasht die Bezirke bei Aktionen
-- `ticker`: lässt einen Ticker der Demomeldungen im Hintergrund laufen
+- `noticker`: zeigt den Ticker der Demomeldungen im Hintergrund nicht an
 
 Beispiel-URL: https://correctiv.github.io/wendedemos/?autoplay&flash&ticker
 
