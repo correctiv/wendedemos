@@ -425,6 +425,8 @@
             var info = d3.select('#info');
             info.classed('hide', !info.classed('hide'));
         };
+        d3.select('.loading').classed('hide', true);
+        d3.select('.controls').classed('hide', false);
         this.ui.rewind.on('click', rewind);
         this.ui.play.on('click', playPause);
         this.ui.fast_fwd.on('click', fastForward);
