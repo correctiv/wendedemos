@@ -12,8 +12,9 @@
     }
 
     function dateToString(d) {
+        var format = d3.format("02d");
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
-         return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
+         return d.getFullYear() + "-" + format(d.getMonth() +1) + "-" + format(d.getDate());
 
     }
 
@@ -61,6 +62,7 @@
         this.options.containerId = this.options.containerId || 'vis';
         this.options.maxRadiusRatio = this.options.maxRadiusRatio || 0.08;
         this.debug = this.options.debug || false;
+        this.minHeight = 400;
         this.eventDates = [
             // add more timed event here if needed
             {   name: "Der Mauerfall (11.9.'89)",
@@ -114,9 +116,15 @@
     Vis.prototype.init = function(){
         this.width = this.target.elem.offsetWidth;
         this.height = this.target.elem.offsetHeight;
+        if (this.height < this.minHeight) {console.warn("Height smaller minHeight" + this.minHeight,this.height)}
         this.playing = false;
-
         this.dim = Math.min(this.width, this.height);
+        this.unit = this.dim/400;
+        this.layout = {
+            lineHeight : Math.max(this.unit * 8,8),
+            fontSize : Math.max(this.unit * 0.3,0.4)
+        };
+
         var smallFloat = 1.0e-6;
 
         this.projection = d3.geo.satellite()
@@ -131,6 +139,7 @@
 
         this.loadData();
     };
+
     Vis.prototype.loadData = function(){
         var self = this;
         d3.json("assets/geo/ddr89.json", this.drawMap.bind(this));
@@ -151,6 +160,7 @@
             };
             // calculate best guess for number of participants
             if (o.partMax === 0) {
+                o.partUnknown = true;
                 o.partGuess = self.options.minPart;
             } else {
                 o.partGuess = o.partMax;
@@ -291,6 +301,8 @@
         var container = d3.select("#" + this.options.containerId);
         this.ui = {};
         this.ui.play = container.select('#play-pause');
+        this.ui.next = container.select('#step-backward');
+        this.ui.previous = container.select('#step-forward');
         this.ui.fast_fwd = container.select('#fast-fw');
         this.ui.rewind = container.select('#rewind');
         this.ui.datebox = container.select("#ui_currentdate");
@@ -371,7 +383,10 @@
         var maxR = this.scales.rPop(100000);
         var anchor = "middle";
         var xOffset = 0;
-        if (this.width < 700 || this.height < 700) {
+        var f = {
+            "fill": "white",
+            "font-size": this.layout.fontSize +"em"};
+        if (this.width < this.minHeight || this.height < this.minHeight) {
             anchor = "end";
             xOffset = - maxR - 5;
         }
@@ -384,10 +399,10 @@
         this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(20000)-maxR,r : this.scales.rPop(20000)});
         //this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(10000)-maxR,r : this.scales.rPop(10000)});
         this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(5000)-maxR,r : this.scales.rPop(5000)});
-        this.legend.append("text").text("100 000").attr({"text-anchor": anchor, x : xOffset, y : maxR * 5/6 } );
-        this.legend.append("text").text("50 000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(50000) * 11/6 - maxR } );
-        this.legend.append("text").text("20 000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(20000) * 8/5 - maxR  } );
-        this.legend.append("text").text("5000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(5000) * 6/5 - maxR  } );
+        this.legend.append("text").text("100 000").style(f).attr({"text-anchor": anchor, x : xOffset, y : maxR * 5/6 } );
+        this.legend.append("text").text("50 000").style(f).attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(50000) * 11/6 - maxR } );
+        this.legend.append("text").text("20 000").style(f).attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(20000) * 8/5 - maxR  } );
+        this.legend.append("text").text("5000").style(f).attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(5000) * 6/5 - maxR  } );
 
         this.mapReady = true;
         if (this.debug) {
@@ -462,6 +477,7 @@
     };
 
     Vis.prototype.clearMarkers = function(){
+        this.svg.select(".markers").selectAll("g").remove();
         this.svg.select(".markers").selectAll("circle").remove();
     }
 
@@ -511,10 +527,14 @@
     Vis.prototype.drawTicker = function(d)  {
             var pos = {
                 x : [this.width * 1.5 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
-                y : this.height * Math.random() - 15
+                y : parseInt((this.height * Math.random()) / (this.layout.lineHeight * 0.7)) * (this.layout.lineHeight * 0.7)
             };
             var l = this.tickerLayer;
             var lc = l;
+// todo add limits
+        var active = vis.tickerLayer.selectAll("text")[0].length;
+        console.log(active);
+        if (active <60) {
             if (this.options.linkABL) {
                 lc = l.append("a").attr({
                     title: d.placeNameURL,
@@ -535,12 +555,11 @@
                 d.partGuess + " Teilnehmer + " + d.eRemarks + " +++")
                 .transition().ease("linear").duration(25000)
                 .attr({x: pos.x[1]}).remove();
+         }
         };
 
-
-
     Vis.prototype.renderEvents = function(d) {
-        var self = this;
+        var g, textPos, textAnchor, textStyle, self = this;
         var mAttr, mAttrStart,rMax;
         if ( d.eRemarks !== "" &&
             this.height > this.options.tickerMinHeight &&
@@ -568,13 +587,47 @@
                 .attr({r: rMax * 0.5}) // fad out size
                 .style({opacity: 0}).remove();
         } else {
-            self.markerLayer.append("circle")
+            // static markers
+            this.svg.selectAll("g").selectAll(".labeltext").classed("hidden",true);
+            //
+            g = self.markerLayer.append("g").classed("static",true);
+               g.append("circle")
                 .attr('class', 'static')
                 .attr(mAttrStart)
                 .transition().ease("cubic-out").duration(this.frameDurationTarget)
-                .attr(mAttr);        }
-    };
+                .attr(mAttr);
+            textPos = {
+                x: d.pCoords[0] ,
+                y: d.pCoords[1] - this.layout.lineHeight * 0.6
+            };
+            textAnchor ={"text-anchor" : "middle"};
+            textStyle = {
+                "font-size" : this.layout.fontSize + "em",
+                fill: "yellow"
+            };
+            g.append("text")
+                .style(textStyle)
+                .attr(textAnchor)
+                .attr(textPos)
+                .text(d.placeName);
+            textPos.y += this.layout.lineHeight *0.7;
+            if (d.eTypeName !== "kA") {
+                g.append("text")
+                    .style(textStyle)
+                    .attr(textAnchor)
+                    .attr(textPos)
+                    .text(d.eTypeName);
+                textPos.y += this.layout.lineHeight * 0.7;
+            }
+            g.append("text")
+                .style(textStyle)
+                .attr(textAnchor)
+                .attr(textPos)
+                .text((d.partUnknown ? "k.A." : d.partMax));
 
+
+        }
+    };
 
     Vis.prototype.renderMarkers = function(arr){
         var self = this;
@@ -584,6 +637,7 @@
            }, parseInt(Math.random() * self.frameDurationTarget * 0.6));
         });
     };
+
     Vis.prototype.flashDistricts = function(selection, options) {
         // color bezirke based on participation ratio
         // get base color from css init;
@@ -630,6 +684,21 @@
         if (typeof d === "object") {d = dateToString(d)}
         var markers = this.groups.dateString[d];
         if (markers === undefined) {return false;}
+        var totals = this.groups.totalsByDay;
+        var desc =  d3.selectAll(".ui").select(".description").select("ul");
+        var c = totals[d].length;
+        var dStr = dateToLocale(new Date(d),this.options.locale);
+        var str = totals[d].length === 1 ? "Ereignis" : "Ereignisse";
+        var frm = d3.format("02d");
+        var t = totals[d].total;
+        var spc = " - ";
+        if (c===1) { spc = " ----- ";
+        } else if (c<10) { spc = " --- ";
+        } else if (c<100) { spc = " -- ";}
+        desc.insert("li", ":first-child").append("span")
+            .text(frm(dStr.dayOfMonth) + "." + frm(dStr.month) + ". " +
+            c + " " +  str + spc + t + " Teiln.")
+            .transition().duration(this.defaultFrameDurationTarget * 15).style("opacity",0).remove();
         this.renderMarkers(markers, this.markerLayer);
         if (this.options.flashDistricts) {this.flashDistricts(this.svg.selectAll(".land"),{dateString :d})}
     };
@@ -637,6 +706,7 @@
     Vis.prototype.mauerFall = function() {
         this.svg.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
     };
+
     Vis.prototype.mauerReset = function() {
         this.svg.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
     };
@@ -646,6 +716,7 @@
         if (this.debug) { console.log("decrease speed",this.frameDurationTarget); }
         this.play();
     };
+
     Vis.prototype.doubleSpeed = function() {
         this.frameDurationTarget /= 2;
         if (this.debug) { console.log("increase speed",this.frameDurationTarget); }
@@ -668,6 +739,7 @@
 
     Vis.prototype.play = function() {
         this.playing = true;
+        this.svg.selectAll("g").selectAll(".labeltext").classed("hidden",false);
         var tmp = [this.currentDate, this.currentInterval.dates[1]];
         //window.clearInterval(this.timer);
         this.showInterval(tmp);
@@ -695,6 +767,74 @@
             });
         }
         return o;
+    };
+
+    Vis.prototype.drawLabels = function() {
+        var textNodes = d3.select("svg").select(".labels");
+        var dots = textNodes.append("g").attr("class","dots");
+        var labels = textNodes.append("g").attr("class","labeltext");
+        var o = this.groups.totalsByPlace;
+        for(var d in o) {
+            var s = {anchor: "start", yOffset: -3.5 * this.unit};
+            var p = o[d].pop89;
+            var n = o[d].placeName;
+            var supressNames = [
+                "Rostock-Warnemünde",
+                "Rostock-Gehlsdorf",
+                "Berlin-Köpenick",
+                "Berlin-Staaken",
+                "Berlin-Dahlwitz-Hoppegarten",
+                "Berlin-Kaulsdorf",
+                "Halle-Neustadt"
+            ];
+            var alignLeft = ["Potsdam","Gotha"];
+            var alignBelow = ["Zwickau","Weimar"];
+            var alignCenter = ["Erfurt","Weimar","Karl-Marx-Stadt","Magdeburg"];
+            if (supressNames.indexOf(n) > -1) {continue;}
+            if ((this.width <= this.minHeight || this.height <= this.minHeight) && p < 100000) {continue;}
+            if (alignLeft.indexOf(n) > -1) {s.anchor = "end";}
+            if (alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
+            if (alignBelow.indexOf(n) > -1) {s.yOffset = 6 * this.unit;}
+
+            switch (true) {
+                case (p < 10000) :  s.class = "smaller10k";s.r = 0.8;s.size = 1;s.showLabel= false; break;
+                case (p < 50000) :  s.class = "pl10kto50k";s.r = 1.3;s.size = 1.2;s.showLabel= false; break;
+                case (p < 100000) : s.class = "pl50kto100k";s.r = 1.6;s.size = 1.2;s.showLabel= true; break;
+                case (p < 300000) : s.class = "pl100kto300k";s.r = 2;s.size = 1.4;s.showLabel= true; break;
+                case (p < 700000) : s.class = "pl300kto700k";s.r = 2.3;s.size = 1.5;s.showLabel= true; break;
+                default :           s.class = "plus700k";s.r = 4;s.size = 1.66;s.showLabel= true; break;
+            }
+            var dot = dots;
+            if (this.options.linkABL) {
+                dot = dot.append("a").attr({
+                    "xlink:href": this.ablBaseURL +
+                    "?Bezirk=" + o[d].bezirkSafe + "&ort=" + o[d].placeNameURL,
+                    "target": "blank"
+                });
+            }
+            dot.append("circle").attr("class", s.class)
+                .attr({
+                    title: o[d].placeName,
+                    cx: o[d].pCoords[0],
+                    cy: o[d].pCoords[1],
+                    r: s.r * this.unit
+                });
+            if (s.showLabel) {
+                labels.append("text")
+                    .attr({"class": s.class})
+                    .attr({"text-anchor": s.anchor})
+                    .attr({
+                        x: o[d].pCoords[0] ,
+                        y: o[d].pCoords[1] + s.yOffset
+                    })
+                    .style({
+                        "font-size": Math.min(s.size * this.layout.fontSize) + "em",
+                        "fill": "white",
+                        "font-family": "sans-serif"
+                    })
+                    .text(n);
+            }
+        }
     };
 
     Vis.prototype.checkLoadState = function () {
@@ -759,73 +899,7 @@
                     };
                 }
             });
-            var textNodes = d3.select("svg").select(".labels");
-            var dots = textNodes.append("g").attr("class","dots");
-            var labels = textNodes.append("g").attr("class","labeltext");
-            var o = this.groups.totalsByPlace;
-            for(var d in o) {
-                var s = {anchor: "start", yOffset: -6};
-                var p = o[d].pop89;
-                var n = o[d].placeName;
-                var supressNames = [
-                    "Rostock-Warnemünde",
-                    "Rostock-Gehlsdorf",
-                    "Berlin-Köpenick",
-                    "Berlin-Staaken",
-                    "Berlin-Dahlwitz-Hoppegarten",
-                    "Berlin-Kaulsdorf",
-                    "Halle-Neustadt"
-                ];
-                var alignLeft = ["Potsdam","Gotha","Zwickau"];
-                var alignCenter = ["Erfurt","Weimar","Karl-Marx-Stadt"];
-                if (supressNames.indexOf(n) > -1) {continue;}
-                if ((this.width < 700 || this.height < 540) && p < 100000) {continue;}
-                if (alignLeft.indexOf(n) > -1) {s.anchor = "end";}
-                if (alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
-
-                switch (true) {
-                    case (p < 10000) :  s.class = "smaller10k";s.r = 2;s.size = 6;s.showLabel= false; break;
-                    case (p < 50000) :  s.class = "pl10kto50k";s.r = 2.5;s.size = 7;s.showLabel= false; break;
-                    case (p < 100000) : s.class = "pl50kto100k";s.r = 3;s.size = 8;s.showLabel= true; break;
-                    case (p < 300000) : s.class = "pl100kto300k";s.r = 3.3;s.size = 10;s.showLabel= true; break;
-                    case (p < 700000) : s.class = "pl300kto700k";s.r = 3.6;s.size = 10;s.showLabel= true; break;
-                    default :           s.class = "plus700k";s.r = 4;s.size = 12;s.showLabel= true; break;
-                }
-                if (n === "Zwickau") {
-                    s.yOffset = 10;
-                }
-                var dot = dots;
-                if (this.options.linkABL) {
-                  dot = dot.append("a").attr({
-                        "xlink:href": this.ablBaseURL +
-                        "?Bezirk=" + o[d].bezirkSafe + "&ort=" + o[d].placeNameURL,
-                        "target": "blank"
-                    });
-                }
-                dot.append("circle").attr("class", s.class)
-                    .attr({
-                        title: o[d].placeName,
-                        cx: o[d].pCoords[0],
-                        cy: o[d].pCoords[1],
-                        r: s.r
-                    });
-                if (s.showLabel) {
-                    labels.append("text")
-                        .attr({"class": s.class})
-                        .attr({"text-anchor": s.anchor})
-                        .attr({
-                            x: o[d].pCoords[0] ,
-                            y: o[d].pCoords[1] + s.yOffset
-                        })
-                        .style({
-                            "font-size": s.size + "px",
-                            "fill": "white",
-                            "font-family": "sans-serif"
-                        })
-                        .text(n);
-                }
-            }
-
+            this.drawLabels();
         }
         if (this.demos && this.locations && this.mapReady) {
             if (this.debug) {

@@ -49,9 +49,10 @@ a, a:visited {
     position: absolute;
     width: 9em;
     height: auto;
+    max-height: 30em;
     top: 0.5em;
     left: 0.5em;
-    background-color: hsla(0,0%,30%,0.3);
+    background: linear-gradient(to bottom, hsla(0,0%,30%,0.3), hsla(0,0%,30%,0.3), hsla(0,0%,30%,0));
     font-size: 4vw;
     padding: 0.5em;
 }
@@ -68,9 +69,27 @@ top: 0.5em;
  }
 #ui_currentdate .dateline2{
     line-height: 0.5em;
+    padding-bottom: 0.3em;
 }
 
 
+.ui .description{
+    padding-top: 0.1em;
+    margin-top: 0.4em;
+    border-top: solid white;
+    border-top-width: thin;
+    color : snow;
+}
+
+.description ul, .description li{
+    font-family: monospace;
+    font-size: 1.7vw;
+    font-weight: 400;
+    list-style-type: none;
+    padding-left:0;
+    margin-left: 0;
+    white-space: nowrap;
+}
 
 
 
@@ -230,11 +249,6 @@ circle.pl100kto300k {
     stroke-color: white;
 }
 
-.legend text {
-    fill: #777;
-    font: 10px sans-serif;
-}
-
 #info-icon {
   position: absolute;
   bottom: 0.3em;
@@ -333,6 +347,9 @@ only screen and (min-device-pixel-ratio: 2) {
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
 
+.hidden{
+    display:none;
+}
 .icon-play:before { content: '\e800'; } /* '' */
 .icon-pause:before { content: '\e801'; } /* '' */
 .icon-to-start:before { content: '\e802'; } /* '' */
