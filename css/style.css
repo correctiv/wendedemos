@@ -36,12 +36,19 @@ a, a:visited {
 .markers circle  {
     fill: white;
     opacity: 0.25;
+    pointer-events: none;
+}
 
+.markers circle.static  {
+    fill: white;
+    opacity: 0.25;
+    pointer-events: all;
 }
 
 #ui_currentdate {
     position: absolute;
-    width: 7em;
+    width: 9em;
+    height: auto;
     top: 0.5em;
     left: 0.5em;
     background-color: hsla(0,0%,30%,0.3);
@@ -49,12 +56,30 @@ a, a:visited {
     padding: 0.5em;
 }
 
+#ui_currentdate .date{
+    position: relative;
+top: 0.5em;
+     border-top: solid white;
+     border-top-width: thin;
+     margin 0em;
+     padding-top: 0em;
+    padding-bottom: 0.5em;
+     line-height: 2em;
+ }
+#ui_currentdate .dateline2{
+    line-height: 0.5em;
+}
+
+
+
+
+
 .icon-to-start {
   float: right;
 }
 
 .controls {
-  padding-bottom: 0.5em;
+  padding-bottom: 0em;
 }
 
 .dots circle {

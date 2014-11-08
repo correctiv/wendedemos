@@ -13,8 +13,7 @@
 
     function dateToString(d) {
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
-        // return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
-        return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
+         return d.getFullYear() + "-" + (d.getMonth() +1) + "-" + d.getDate();
 
     }
 
@@ -51,10 +50,10 @@
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
         this.options.forcedEndDate = this.options.forcedEndDate || false;  // override start date
         this.options.tickerEnabled = this.options.tickerEnabled || false;  // override start date
+        this.options.tickerMinHeight = this.options.tickerMinHeight || 720;
         this.options.defaultDaysPerSecond = this.options.defaultDaysPerSecond || 2;
         this.options.fastFwdFactor = this.options.fastFwdFactor || 4;
         this.options.autoplay = this.options.autoplay === undefined ? false : this.options.autoplay;
-        this.options.daysPerSecond = this.options.defaultDaysPerSecond;
         this.options.linkABL = this.options.linkABL || false;
         this.options.trailFallOff = this.options.trailFallOff || 0.05;
         this.options.noAgentExceptions = this.options.noAgentExceptions === undefined ? false : this.options.noAgentExceptions;
@@ -104,6 +103,8 @@
         };
         this.currentDate = null;
         this.mapReady = false;
+        this.defaultFrameDurationTarget = parseInt(1000/self.options.defaultDaysPerSecond);
+        this.frameDurationTarget = this.defaultFrameDurationTarget;
         this.styles = {
             landBaseColor: "#222"
         };
@@ -399,7 +400,6 @@
         var self = this;
         // clear all pending transitions
         flushAllD3Transitions();
-        this.flashDistricts(this.svg.selectAll(".land"),{reset:true});
         //this.land.selectAll(".bezirk").style("fill", this.styles.landBaseColor);
         this.eventDates.forEach( function(d) {
             if (date < d.date) {
@@ -416,6 +416,8 @@
         var rewind = function() {
             self.currentDate = new Date(self.currentInterval.dates[0]);
             window.clearInterval(self.timer);
+            self.clearMarkers();
+            self.flashDistricts(self.svg.selectAll(".land"),{reset:true});
             self.showInterval(self.currentInterval.dates);
         };
         var playPause = function() {
@@ -426,9 +428,10 @@
             }
         };
         var fastForward = function() {
-            if (self.options.daysPerSecond === self.options.defaultDaysPerSecond) {
-                self.options.daysPerSecond = self.options.defaultDaysPerSecond * self.options.fastFwdFactor;
+            if (this.frameDurationTarget === this.defaultFrameDurationTarget) {
+                this.frameDurationTarget = this.defaultFrameDurationTarget / self.options.fastFwdFactor;
                 self.ui.fast_fwd.classed('active', true);
+                window.clearInterval(self.timer);
             } else {
                 self.fastFwdOff();
             }
@@ -455,8 +458,12 @@
         this.ui.datetext.dayOfWeek.text(strObj.dayOfWeekString);
         this.ui.datetext.day.text(strObj.dayOfMonth + ".");
         this.ui.datetext.month.text(strObj.monthString);
-        this.ui.datetext.year.text(strObj.year);
+        this.ui.datetext.year.text((String(strObj.year)).replace("19", "’") );
     };
+
+    Vis.prototype.clearMarkers = function(){
+        this.svg.select(".markers").selectAll("circle").remove();
+    }
 
     Vis.prototype.showInterval = function(arr) {
         var self = this;
@@ -467,7 +474,8 @@
         var endDateStr = dateToString(interval[1]);
         if (this.debug) {console.log("showInterval",interval, this.currentDate);}
         this.resetEventsAtDate();
-        this.timer = window.setInterval(function(){
+        this.clearMarkers();
+         this.timer = window.setInterval(function(){
             var currentDateString = dateToString(self.currentDate);
             self.eventDates.forEach( function(d) {
                 //if (self.debug) {console.info(currentDateString, d.dateString);}
@@ -479,9 +487,6 @@
             self.updateUI();
             // trigger rendering
             if (self.groups.dateString[currentDateString]) {self.showDate(currentDateString);}
-            // end interval;
-            // trigger fadeout
-            //fadeCircles();
             if (currentDateString === endDateStr) {
                 if (self.options.loop) {
                     self.currentDate = new Date(interval[0]);
@@ -498,28 +503,26 @@
                 window.clearInterval(self.timer);
             }
             i += 1;
-        }, parseInt(1000 / self.options.daysPerSecond));
+        }, this.frameDurationTarget);
         this.ui.play.classed('icon-play', false).classed('icon-pause', true);
         this.playing = true;
     };
 
-    Vis.prototype.renderEvents = function(d) {
-        var self = this;
-        var pos = {
-            x : [this.width * 1.5 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
-            y : this.height * Math.random() - 15
-        };
-        if ( d.eRemarks !== "" && this.height > 700 && this.options.tickerEnabled) {
-            var l = self.tickerLayer;
+    Vis.prototype.drawTicker = function(d)  {
+            var pos = {
+                x : [this.width * 1.5 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
+                y : this.height * Math.random() - 15
+            };
+            var l = this.tickerLayer;
             var lc = l;
-            if (self.options.linkABL) {
+            if (this.options.linkABL) {
                 lc = l.append("a").attr({
                     title: d.placeNameURL,
-                    "xlink:href": self.options.linkABL ? (
-                            this.ablBaseURL +
-                            "?Bezirk=" + d.bezirkSafe +
-                            "&datum=" + d.dateString + "&ort=" + d.placeNameURL
-                        ) : "",
+                    "xlink:href": this.options.linkABL ? (
+                    this.ablBaseURL +
+                    "?Bezirk=" + d.bezirkSafe +
+                    "&datum=" + d.dateString + "&ort=" + d.placeNameURL
+                    ) : "",
                     "target": "_blank"
                 });
             }
@@ -529,26 +532,47 @@
                 y: pos.y
             }).text(
                 "+++ " + d.placeName + " (" + dateToString(d.date) + ") " +
-            d.partGuess + " Teilnehmer + " + d.eRemarks + " +++")
+                d.partGuess + " Teilnehmer + " + d.eRemarks + " +++")
                 .transition().ease("linear").duration(25000)
                 .attr({x: pos.x[1]}).remove();
-        }
-        self.markerLayer.append("circle")
-            .attr({
-                r : 0,
-                cx: d.pCoords[0],
-                cy: d.pCoords[1],
-                fill : "lime",
-                opacity : 0
-            })
-            .transition().ease("cubic-out").duration(900)
-            .attr({
-                r : Math.max(0, self.scales.rPop(d.partGuess)),
-                opacity : 1
-            })
-            .transition().ease("linear").duration(2500)
-            .attr({r: Math.max(0, self.scales.rPop(d.partGuess*0.8))})
-            .style({opacity : 0}).remove();
+        };
+
+
+
+    Vis.prototype.renderEvents = function(d) {
+        var self = this;
+        var mAttr, mAttrStart,rMax;
+        if ( d.eRemarks !== "" &&
+            this.height > this.options.tickerMinHeight &&
+            this.playing &&
+            this.options.tickerEnabled
+        ) {this.drawTicker(d);}
+        mAttrStart = {
+            r: 0,
+            cx: d.pCoords[0],
+            cy: d.pCoords[1],
+            fill: "lime",
+            opacity: 0
+        };
+        rMax = Math.max(3, self.scales.rPop(d.partGuess));
+        mAttr = {
+            r : rMax,
+            opacity : 1
+        };
+        if (this.playing) {
+            self.markerLayer.append("circle")
+                .attr(mAttrStart)
+                .transition().ease("cubic-out").duration(this.frameDurationTarget)
+                .attr(mAttr)
+                .transition().ease("linear").duration(this.frameDurationTarget * 5)
+                .attr({r: rMax * 0.5}) // fad out size
+                .style({opacity: 0}).remove();
+        } else {
+            self.markerLayer.append("circle")
+                .attr('class', 'static')
+                .attr(mAttrStart)
+                .transition().ease("cubic-out").duration(this.frameDurationTarget)
+                .attr(mAttr);        }
     };
 
 
@@ -557,7 +581,7 @@
         arr.forEach(function(d) {
            setTimeout(function() {
                 self.renderEvents(d);
-            }, Math.random() * 1000/self.options.daysPerSecond);
+           }, parseInt(Math.random() * self.frameDurationTarget * 0.6));
         });
     };
     Vis.prototype.flashDistricts = function(selection, options) {
@@ -581,6 +605,8 @@
         for (var d in bezRatios) {
             // trailing brightness for fallback color
             var id = "#" + d;
+            var brightnessBoost = 10;
+            var maxBrightness = 70;
             var b = selection.select(id);
             //flash
             if (reset) {
@@ -590,22 +616,22 @@
                 rTrail[d] = rTrail[d] || {};
                 rt = rTrail[d];
                 rt.val = (rt.val === undefined) ? this.scales.rel(r) : this.scales.rel(r) + rt.val;
-                //rt.color = d3.hcl(baseColor).brighter(Math.min(rt.val,2));
                 rt.color = d3.hcl(baseColor);
-                console.log(rt.val *10);
-                rt.color.l = Math.min(d3.hcl(baseColor).l + rt.val * 10,70);
-                console.log(r);
-            b.style({fill: d3.hcl(rt.color).brighter(Math.min(this.scales.rel(r),3))})
+                rt.color.l = Math.min(d3.hcl(baseColor).l + rt.val * brightnessBoost,maxBrightness);
+                b.style({fill: d3.hcl(rt.color).brighter(Math.min(this.scales.rel(r),3))})
                 // fall off
-                .transition().duration(1000/this.options.daysPerSecond).style({fill: rt.color});
+                .transition().duration(this.frameDurationTarget).style({fill: rt.color});
             }
         }
     };
 
-    Vis.prototype.showDate = function(dateString){
-        var markers = this.groups.dateString[dateString];
+    Vis.prototype.showDate = function(date){
+        var d = date;
+        if (typeof d === "object") {d = dateToString(d)}
+        var markers = this.groups.dateString[d];
+        if (markers === undefined) {return false;}
         this.renderMarkers(markers, this.markerLayer);
-        if (this.options.flashDistricts) {this.flashDistricts(this.svg.selectAll(".land"),{dateString :dateString})}
+        if (this.options.flashDistricts) {this.flashDistricts(this.svg.selectAll(".land"),{dateString :d})}
     };
 
     Vis.prototype.mauerFall = function() {
@@ -616,32 +642,34 @@
     };
 
     Vis.prototype.halfSpeed = function() {
-        this.options.daysPerSecond /= 2;
-        if (this.debug) { console.log("decrease speed",this.options.daysPerSecond); }
+        this.frameDurationTarget *= 2;
+        if (this.debug) { console.log("decrease speed",this.frameDurationTarget); }
         this.play();
     };
     Vis.prototype.doubleSpeed = function() {
-        this.options.daysPerSecond *= 2;
-        if (this.debug) { console.log("increase speed",this.options.daysPerSecond); }
+        this.frameDurationTarget /= 2;
+        if (this.debug) { console.log("increase speed",this.frameDurationTarget); }
         this.play();
     };
 
     Vis.prototype.fastFwdOff = function() {
-        this.options.daysPerSecond = this.options.defaultDaysPerSecond;
+        this.frameDurationTarget = this.defaultFrameDurationTarget;
         this.ui.fast_fwd.classed('active', false);
     };
 
     Vis.prototype.pause = function() {
         this.playing = false;
-        this.fastFwdOff();
+        flushAllD3Transitions
         window.clearInterval(this.timer);
+        this.showDate(this.currentDate);
+        this.fastFwdOff();
         this.ui.play.classed('icon-play', true).classed('icon-pause', false);
     };
 
     Vis.prototype.play = function() {
         this.playing = true;
         var tmp = [this.currentDate, this.currentInterval.dates[1]];
-        window.clearInterval(this.timer);
+        //window.clearInterval(this.timer);
         this.showInterval(tmp);
     };
 
