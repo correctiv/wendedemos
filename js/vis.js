@@ -4,6 +4,13 @@
 
     var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
 
+    var flushAllD3Transitions = function() {
+        var now = Date.now;
+        Date.now = function() { return Infinity; };
+        d3.timer.flush();
+        Date.now = now;
+    }
+
     function dateToString(d) {
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
         // return  d.getDate() + "-" + monthNames[d.getMonth()]  + "-" + d.getFullYear();
@@ -39,7 +46,6 @@
         // set defaults
         this.options.locale = this.options.locale || "de";
         this.options.minPart = this.options.minPart || 50;
-        this.options.flashColor = this.options.flashColor || "hsl(54,30%,50%)";
         this.options.flashDistricts = this.options.flashDistricts || false;
         this.options.limitLoops = this.options.limitLoops === undefined ? 500 : this.options.limitLoops;  //catch runaway intervals and debugging, hard limit of 500
         this.options.forcedStartDate = this.options.forcedStartDate || false;  // override start date
@@ -98,6 +104,9 @@
         };
         this.currentDate = null;
         this.mapReady = false;
+        this.styles = {
+            landBaseColor: "#222"
+        };
         this.ablBaseURL = "http://www.archiv-buergerbewegung.de/index.php/demonstrationen";
     }
 
@@ -329,11 +338,12 @@
         grid.append("path")
             .datum(graticule)
             .attr("d", path);
-        this.svg.append("g")
+        this.land = this.svg.append("g")
             .attr("class", "land")
             .selectAll('path')
             .data(topojson.feature(ddr, ddr.objects.ddr89).features)
             .enter().append("path")
+            .attr("class", function(d) { return  d.id === undefined ? "brd" : "bezirk"; })
             .attr("id", function(d) { return  d.id === undefined ? "BRD" :
                 d.id === "Frankfurt (Oder)" ? "Frankfurt" : d.id; })
             .attr("title", function(d) { return  d.id === undefined ? "" : "Bezirk " + d.id; })
@@ -387,9 +397,10 @@
 
     Vis.prototype.resetEventsAtDate = function(date) {
         var self = this;
-        // reset filled arrays;
-        this.currentInterval.trailingBezRatios = undefined;
-
+        // clear all pending transitions
+        flushAllD3Transitions();
+        this.flashDistricts(this.svg.selectAll(".land"),{reset:true});
+        //this.land.selectAll(".bezirk").style("fill", this.styles.landBaseColor);
         this.eventDates.forEach( function(d) {
             if (date < d.date) {
                 if (self.debug) {console.info("found future events", d.dateString, d.name);}
@@ -404,7 +415,8 @@
         var self = this;
         var rewind = function() {
             self.currentDate = new Date(self.currentInterval.dates[0]);
-            self.updateUI();
+            window.clearInterval(self.timer);
+            self.showInterval(self.currentInterval.dates);
         };
         var playPause = function() {
             if (self.playing) {
@@ -548,42 +560,52 @@
             }, Math.random() * 1000/self.options.daysPerSecond);
         });
     };
-
-
-    Vis.prototype.showDate = function(dateString){
-        var land = d3.selectAll(".land");
-        this.styles = this.styles || {};
-        var markers = this.groups.dateString[dateString];
-        this.renderMarkers(markers, this.markerLayer);
-        if (this.options.flashDistricts) {
-            // color bezirke based on participation ratio
-            // get base color from css inits;
-            // todo fix unexpected clipping for brightness behavior;
-            if (this.styles.landBaseColor == undefined) {
-                this.styles.landBaseColor = land.style('fill');
-            }
-            var baseColor = this.styles.landBaseColor;
+    Vis.prototype.flashDistricts = function(selection, options) {
+        // color bezirke based on participation ratio
+        // get base color from css init;
+        var options = options || {};
+        // todo fix unexpected clipping for brightness behavior;
+        var baseColor = options.baseColor || this.styles.landBaseColor;
+        //var ratioValue = options.ratioValue || false;
+        var dateString = options.dateString || false;
+        var reset = options.reset || false;
+        if (reset) {
+            this.currentInterval.trailingBezRatios = {};
+            bezRatios = this.groups.bezirkeTotals;
+        } else {
             var bezRatios = this.groups.bezirkeTotalsByDay[dateString];
             this.currentInterval.trailingBezRatios = this.currentInterval.trailingBezRatios || {};
-            var rTrail = this.currentInterval.trailingBezRatios;
-            var flashBaseC = this.options.flashColor;
-            for (var d in bezRatios) {
-                var r = bezRatios[d].ratio;
-                // trailing brightness for fallback color
-                rTrail[d] = rTrail[d] === undefined ? this.scales.rel(r) : this.scales.rel(r) + rTrail[d];
-                var id = "#" + d;
-                var b = land.select(id);
-                b.style({
-                    // Flash
-                    fill: d3.hsl(flashBaseC).brighter(Math.min(this.scales.rel(r),1))
-                })
-                    // Fall back to this
-                    .transition().duration(800)
-                    .style({
-                        fill: d3.hcl(baseColor).brighter(Math.min(rTrail[d],3))
-                    });
+        }
+        var rTrail = this.currentInterval.trailingBezRatios;
+        var r, rt;
+        for (var d in bezRatios) {
+            // trailing brightness for fallback color
+            var id = "#" + d;
+            var b = selection.select(id);
+            //flash
+            if (reset) {
+                b.style({fill: baseColor});
+            } else {
+                r = bezRatios[d].ratio;
+                rTrail[d] = rTrail[d] || {};
+                rt = rTrail[d];
+                rt.val = (rt.val === undefined) ? this.scales.rel(r) : this.scales.rel(r) + rt.val;
+                //rt.color = d3.hcl(baseColor).brighter(Math.min(rt.val,2));
+                rt.color = d3.hcl(baseColor);
+                console.log(rt.val *10);
+                rt.color.l = Math.min(d3.hcl(baseColor).l + rt.val * 10,70);
+                console.log(r);
+            b.style({fill: d3.hcl(rt.color).brighter(Math.min(this.scales.rel(r),3))})
+                // fall off
+                .transition().duration(1000/this.options.daysPerSecond).style({fill: rt.color});
             }
         }
+    };
+
+    Vis.prototype.showDate = function(dateString){
+        var markers = this.groups.dateString[dateString];
+        this.renderMarkers(markers, this.markerLayer);
+        if (this.options.flashDistricts) {this.flashDistricts(this.svg.selectAll(".land"),{dateString :dateString})}
     };
 
     Vis.prototype.mauerFall = function() {
