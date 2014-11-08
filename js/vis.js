@@ -531,9 +531,8 @@
             };
             var l = this.tickerLayer;
             var lc = l;
-// todo add limits
+        // add limit based on render speed not fixed number
         var active = vis.tickerLayer.selectAll("text")[0].length;
-        console.log(active);
         if (active <60) {
             if (this.options.linkABL) {
                 lc = l.append("a").attr({
