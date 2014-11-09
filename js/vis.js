@@ -62,6 +62,30 @@
         this.options.containerId = this.options.containerId || 'vis';
         this.options.maxRadiusRatio = this.options.maxRadiusRatio || 0.08;
         this.debug = this.options.debug || false;
+        this.styles = {
+            landBaseColor: options.landBaseColor || "#222",
+            tickerColor: options.tickerColor || "lime",
+            markerColor: options.markerColor || "#EEE",
+            markerTextColor: options.markerTextColor || "#000",
+            labelColor: options.labelColor || "#CCC",
+            districtBoundaryColor: options.districtBoundaryColor || "#444",
+            countryBoundaryColor: options.countryBoundaryColor || "#883333",
+        };
+    }
+
+    Vis.prototype.init = function(){
+        this.target = {
+            elem: document.getElementById(this.options.containerId),
+            ratio: 1.5,
+            baseScale: 18000,
+            baseSize: 1000
+        };
+        this.width = this.target.elem.offsetWidth;
+        this.height = this.target.elem.offsetHeight;
+        if (this.height < this.minHeight) {console.warn("Height smaller minHeight" + this.minHeight,this.height)}
+        this.playing = false;
+        this.dim = Math.min(this.width, this.height);
+        this.unit = this.dim/400;
         this.minHeight = 400;
         this.eventDates = [
             // add more timed event here if needed
@@ -82,14 +106,64 @@
             d.date =  new Date(d.dateString); // populate date field with type date
             d.dateString = dateToString(d.date); // coerce into standard format
         });
-        this.target = {
-            elem: document.getElementById(this.options.containerId),
-            ratio: 1.5,
-            baseScale: 18000,
-            baseSize: 1000
+
+       this.styles.staatsGrenze = {
+            fill: "none",
+            stroke: this.styles.countryBoundaryColor,
+            "stroke-linejoin": "round",
+            "stroke-linecap": "round",
+            "stroke-width": this.unit * 0.1 +"em"
         };
+
+       this.styles.staatsGrenzeOffen = {
+            fill: "none",
+            stroke: this.styles.districtBoundaryColor,
+            "stroke-linejoin": "round",
+            "stroke-linecap": "round",
+            "stroke-width": this.unit * 0.05 +"em",
+            "animation-name": "flicker",
+            "animation-duration": "1.3s",
+            "animation-iteration-count": 1
+        }
+
         this.scales = {
             rel : d3.scale.linear().domain([0, 0.5]).range([0.1, 1])
+        };
+        this.layout = {};
+        this.layout.labelPlacement = {
+            supressNames : [
+                "Rostock-Warnemünde",
+                "Rostock-Gehlsdorf",
+                "Berlin-Köpenick",
+                "Berlin-Staaken",
+                "Berlin-Dahlwitz-Hoppegarten",
+                "Berlin-Kaulsdorf",
+                "Halle-Neustadt"
+            ],
+            alignLeft : ["Potsdam","Gotha"],
+            alignBelow : ["Zwickau","Weimar"],
+            alignCenter : ["Erfurt","Weimar","Karl-Marx-Stadt","Magdeburg"]
+        }
+        this.layout.labelClasses = [
+            {range:[0,9999],          className : "smaller10k",   r : 0.8, fs : 1.0, dotStyle : 1, showLabel: false},
+            {range:[10000,49999],     className : "pl10kto50k",   r : 1.3, fs : 1.2, dotStyle : 1, showLabel: false},
+            {range:[50000,99999],     className : "pl50kto100k",  r : 1.6, fs : 1.2, dotStyle : 1, showLabel: true},
+            {range:[100000,299999],   className : "pl100kto300k", r : 2.0, fs : 1.4, dotStyle : 2, showLabel: true},
+            {range:[300000,699999],   className : "pl300kto700k", r : 2.3, fs : 1.5, dotStyle : 3, showLabel: true},
+            {range:[700000,Infinity], className : "plus700k",     r : 4.0, fs : 1.7, dotStyle : 4, textStyle: "bold", showLabel: true}
+        ]
+
+        this.styles.label = {
+            dots : {
+                1 : {"fill-opacity" : 0.5,"stroke-width" : "1em", "stroke-opacity": 0.01},
+                2 : {fill: "grey", "fill-opacity": 0.3, stroke: "black", "stroke-width": "thin", "stroke-opacity": 1},
+                3 : {fill: "grey", "fill-opacity": 0.3, stroke: "black", "stroke-width": "thin", "stroke-opacity": 1},
+                4 : {fill: "grey", "fill-opacity": 0.01}
+            },
+            text : {
+                norma1:  {"font-weight":"normal"},
+                bold: {"font-weight": 800}
+            }
         };
 
         this.demos = false;
@@ -104,26 +178,14 @@
             bezRatios : {}
         };
         this.currentDate = null;
+        this.endState = false;
         this.mapReady = false;
-        this.defaultFrameDurationTarget = parseInt(1000/self.options.defaultDaysPerSecond);
+        this.defaultFrameDurationTarget = parseInt(1000/this.options.defaultDaysPerSecond);
         this.frameDurationTarget = this.defaultFrameDurationTarget;
-        this.styles = {
-            landBaseColor: "#222"
-        };
         this.ablBaseURL = "http://www.archiv-buergerbewegung.de/index.php/demonstrationen";
-    }
 
-    Vis.prototype.init = function(){
-        this.width = this.target.elem.offsetWidth;
-        this.height = this.target.elem.offsetHeight;
-        if (this.height < this.minHeight) {console.warn("Height smaller minHeight" + this.minHeight,this.height)}
-        this.playing = false;
-        this.dim = Math.min(this.width, this.height);
-        this.unit = this.dim/400;
-        this.layout = {
-            lineHeight : Math.max(this.unit * 8,8),
-            fontSize : Math.max(this.unit * 0.3,0.4)
-        };
+        this.layout.lineHeight = Math.max(this.unit * 8,8);
+        this.layout.fontSize = Math.max(this.unit * 0.3,0.4);
 
         var smallFloat = 1.0e-6;
 
@@ -292,7 +354,7 @@
         var smallFloat = 1.0e-6;
         var projection = this.projection;
         var graticule = d3.geo.graticule()
-            // [lonmin,latmin], [lonmax + offset for last, latmax + offset for last]
+    // [lonmin,latmin], [lonmax + offset for last, latmax + offset for last]
             .extent([[-5, 47], [30 + smallFloat, 85 + smallFloat]])
             .step([1, 1]);
 
@@ -329,28 +391,38 @@
                 .attr("stdDeviation",2);
         }
 
-        // Add tickerlayer in background
-        this.tickerLayer = this.svg.append("g")
-            .attr("class", "ticker");
-
-
         // end filters
-        // some inline svg styling happening here
+        // ---
+        // All svg styles are inline, no css dependencies
+        // ---
+        // declare styles as high up as possible, or assign to groups if needed,
+        // not to individual elements, whens styles are the same
+
         // breaks in chrome fullscreen
         var grid = this.svg.append("g")
             .classed("graticule", true);
         grid.append("path")
             .datum(graticule)
             .attr("class", "blur")
-            .style("filter", "url(#svgfblur)")
-            .style("stroke", "yellow")
-            .style("stroke-width", 0.2)
-            .style("opacity", 0.5)
+            .style({
+                fill: "none",
+                "stroke-width": this.unit/20 + "em",
+                "filter": "url(#svgfblur)",
+                "stroke": "yellow",
+                "opacity": 0.3
+            })
             .attr("d", path);
 
         grid.append("path")
             .datum(graticule)
+            .style({
+                fill: "none",
+                "stroke-width": this.unit/40 + "em",
+                stroke: "#fff",
+                "opacity": 0.5
+            })
             .attr("d", path);
+
         this.land = this.svg.append("g")
             .attr("class", "land")
             .selectAll('path')
@@ -362,47 +434,134 @@
             .attr("title", function(d) { return  d.id === undefined ? "" : "Bezirk " + d.id; })
             .attr("d", path);
 
-        // Bezirke
+        this.land = this.svg.append("g")
+            .attr("class", "land")
+            .selectAll('path')
+            .data(topojson.feature(ddr, ddr.objects.ddr89).features)
+            .enter().append("path")
+            .attr("class", function(d) { return  d.id === undefined ? "brd" : "bezirk"; })
+            .attr("id", function(d) { return  d.id === undefined ? "BRD" :
+                d.id === "Frankfurt (Oder)" ? "Frankfurt" : d.id; })
+            .attr("title", function(d) { return  d.id === undefined ? "" : "Bezirk " + d.id; })
+            .attr("d", path);
+        // apply inline Styles
+        this.svg.selectAll(".bezirk").style({fill: this.styles.landBaseColor});
+        this.svg.selectAll(".brd").style({"pointer-events": "none","fill-opacity": 0.6,fill: d3.hcl(this.styles.landBaseColor).brighter(0.5)});
+
+        // Bezirksgrenzen
         this.svg.append("path")
             .datum(topojson.mesh(ddr, ddr.objects.ddr89, function (a, b) { return a !== b && a.id !== undefined && b.id !== undefined; }))
             .attr("class", "bezirksgrenze")
+            .style({
+                fill: "none",
+                stroke: this.styles.districtBoundaryColor,
+                "stroke-linejoin": "bevel",
+                "stroke-linecap": "bevel",
+                "stroke-width": "fine"
+            })
             .attr("d", path);
         // Staatsgrenze
         this.svg.append("path")
             .datum(topojson.mesh(ddr, ddr.objects.ddr89, function (a, b) { return a !== b && (a.id === undefined || b.id === undefined); }))
             .attr("class", "staatsgrenze")
+            .style(this.styles.staatsGrenze)
             .attr("d", path);
 
         this.labelLayer = this.svg.append("g")
             .attr("class", "labels");
-        this.markerLayer = this.svg.append("g")
-            .attr("class", "markers");
 
+        this.labelDotsLayer = this.labelLayer.append("g")
+            .attr("class","dots");
+        this.labelTextLayer = this.labelLayer.append("g")
+            .attr("class","labeltext")
+            .style({
+                "pointer-events": "none",
+                "fill": this.styles.labelColor,
+                "font-family": "sans-serif"
+            });
+
+
+        this.markerLayer = this.svg.append("g")
+            .attr("class", "markers")
+            .style({
+                "pointer-events": "none",
+                fill: this.styles.markerColor,
+                stroke: "none"
+            });
+// add drop shadow
+        var fs = this.layout.fontSize * 1.2 + "em";
+        this.markerTextOutLayer = this.svg.append("g")
+            .attr("class", "markerstextout")
+            .style({
+                fill: "none",
+                opacity: 0.6,
+                stroke: this.styles.markerTextColor,
+                "stroke-width":this.layout.fontSize * 0.5 + "em",
+                "font-family": "sans-serif",
+                "stroke-linejoin": "round",
+                "stroke-linecap": "round",
+                "filter": is_chrome ? "" : "url(#svgfblur)",
+                "-webkit-filter": "url(#svgfblur)",
+                "font-size": fs,
+                "text-anchor": "middle"
+            });
+
+        this.markerTextLayer = this.svg.append("g")
+            .attr("class", "markerstext")
+            .style({
+                fill: this.styles.markerColor,
+                "fill-opacity": 1,
+                "opacity": 1,
+                stroke: "none",
+                "font-family": "sans-serif",
+                "font-size": fs,
+                "text-anchor": "middle"
+            });
+
+
+        // Add tickerlayer on top
+        this.tickerLayer = this.svg.append("g")
+            .attr("class", "ticker")
+            .style({
+                fill: this.styles.tickerColor,
+                stroke: "none",
+                "font-family": "monospace",
+                "font-size": this.layout.fontSize * 1.5 + "em",
+                "text-anchor": "start"
+        });
 
         var legendOffset = [this.width * 6/7,this.height * 1/6];
         var maxR = this.scales.rPop(100000);
         var anchor = "middle";
         var xOffset = 0;
         var f = {
-            "fill": "white",
+            "fill": this.styles.markerColor,
             "font-size": this.layout.fontSize +"em"};
         if (this.width < this.minHeight || this.height < this.minHeight) {
             anchor = "end";
             xOffset = - maxR - 5;
         }
-        this.legend = this.svg.append("g")
-            .attr("transform", "translate("+
-            legendOffset[0] +"," + legendOffset[1] +")")
+        var legend =this.legend = this.svg.append("g")
+            .attr("transform", "translate("+ legendOffset[0] +"," + legendOffset[1] +")")
             .attr("class", "legend");
-        this.legend.append("circle").attr({cx: 0, cy: 0,r : maxR});
-        this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(50000)-maxR,r : this.scales.rPop(50000)});
-        this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(20000)-maxR,r : this.scales.rPop(20000)});
+        var cg = legend.append("g")
+            .style({
+                fill:"none",
+                stroke: this.styles.markerColor,
+                "stroke-width":"fine"
+            });
+        cg.append("circle").attr({cx: 0, cy: 0,r : maxR});
+        cg.append("circle").attr({cx: 0, cy: this.scales.rPop(50000)-maxR,r : this.scales.rPop(50000)});
+        cg.append("circle").attr({cx: 0, cy: this.scales.rPop(20000)-maxR,r : this.scales.rPop(20000)});
         //this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(10000)-maxR,r : this.scales.rPop(10000)});
-        this.legend.append("circle").attr({cx: 0, cy: this.scales.rPop(5000)-maxR,r : this.scales.rPop(5000)});
-        this.legend.append("text").text("100 000").style(f).attr({"text-anchor": anchor, x : xOffset, y : maxR * 5/6 } );
-        this.legend.append("text").text("50 000").style(f).attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(50000) * 11/6 - maxR } );
-        this.legend.append("text").text("20 000").style(f).attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(20000) * 8/5 - maxR  } );
-        this.legend.append("text").text("5000").style(f).attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(5000) * 6/5 - maxR  } );
+        cg.append("circle").attr({cx: 0, cy: this.scales.rPop(5000)-maxR,r : this.scales.rPop(5000)});
+
+        var tg = legend.append("g")
+            .style(f);
+        tg.append("text").text("100 000").attr({"text-anchor": anchor, x : xOffset, y : maxR * 5/6 } );
+        tg.append("text").text("50 000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(50000) * 11/6 - maxR } );
+        tg.append("text").text("20 000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(20000) * 8/5 - maxR  } );
+        tg.append("text").text("5000").attr({"text-anchor": anchor, x : xOffset, y : this.scales.rPop(5000) * 6/5 - maxR  } );
 
         this.mapReady = true;
         if (this.debug) {
@@ -414,7 +573,7 @@
     Vis.prototype.resetEventsAtDate = function(date) {
         var self = this;
         // clear all pending transitions
-        flushAllD3Transitions();
+        // flushAllD3Transitions();
         //this.land.selectAll(".bezirk").style("fill", this.styles.landBaseColor);
         this.eventDates.forEach( function(d) {
             if (date < d.date) {
@@ -429,6 +588,7 @@
     Vis.prototype.setupControls = function() {
         var self = this;
         var rewind = function() {
+            self.endState = false;
             self.currentDate = new Date(self.currentInterval.dates[0]);
             window.clearInterval(self.timer);
             self.clearMarkers();
@@ -443,12 +603,13 @@
             }
         };
         var fastForward = function() {
-            if (this.frameDurationTarget === this.defaultFrameDurationTarget) {
-                this.frameDurationTarget = this.defaultFrameDurationTarget / self.options.fastFwdFactor;
+            if (self.frameDurationTarget === self.defaultFrameDurationTarget) {
+                self.frameDurationTarget = self.defaultFrameDurationTarget / self.options.fastFwdFactor;
                 self.ui.fast_fwd.classed('active', true);
                 window.clearInterval(self.timer);
             } else {
                 self.fastFwdOff();
+                window.clearInterval(self.timer);
             }
             self.play();
         };
@@ -477,8 +638,9 @@
     };
 
     Vis.prototype.clearMarkers = function(){
-        this.svg.select(".markers").selectAll("g").remove();
         this.svg.select(".markers").selectAll("circle").remove();
+        this.svg.select(".markerstextout").selectAll("g").remove();
+        this.svg.select(".markerstext").selectAll("g").remove();
     }
 
     Vis.prototype.showInterval = function(arr) {
@@ -489,7 +651,7 @@
         this.currentDate = new Date(interval[0]);
         var endDateStr = dateToString(interval[1]);
         if (this.debug) {console.log("showInterval",interval, this.currentDate);}
-        this.resetEventsAtDate();
+        this.resetEventsAtDate(this.currentDate);
         this.clearMarkers();
          this.timer = window.setInterval(function(){
             var currentDateString = dateToString(self.currentDate);
@@ -509,7 +671,10 @@
                     if (self.debug) {console.log("new loop",interval[0]);}
                 } else {
                     if (self.debug) {console.log("exit interval loop based on date loop");}
-                    self.pause();
+                    self.pause({staticView:false})
+                    window.clearInterval(self.timer);
+                    self.endState = true;
+                    return true;
                 }
             } else {
                 self.currentDate.setDate(self.currentDate.getDate() + 1);
@@ -517,6 +682,7 @@
             if (i >= limit && limit) {
                 if (self.debug) {console.log("exit interval loop based on limit", limit, i);}
                 window.clearInterval(self.timer);
+                return true;
             }
             i += 1;
         }, this.frameDurationTarget);
@@ -526,14 +692,15 @@
 
     Vis.prototype.drawTicker = function(d)  {
             var pos = {
-                x : [this.width * 1.5 + (Math.random()/2 + 1), - this.width * (Math.random()/2)],
+                x : [this.width * 0.75 + (Math.random()/2 + 1),  (Math.random()) - this.width /2],
                 y : parseInt((this.height * Math.random()) / (this.layout.lineHeight * 0.7)) * (this.layout.lineHeight * 0.7)
             };
+        var durations = [2000,10000];
             var l = this.tickerLayer;
             var lc = l;
         // add limit based on render speed not fixed number
         var active = vis.tickerLayer.selectAll("text")[0].length;
-        if (active <60) {
+        if (active < 20 || d.partGuess > 10000) {
             if (this.options.linkABL) {
                 lc = l.append("a").attr({
                     title: d.placeNameURL,
@@ -546,14 +713,18 @@
                 });
             }
             lc.append("text").attr({
-                "text-anchor": "start",
                 x: pos.x[0],
                 y: pos.y
-            }).text(
+            }).style("opacity", 0)
+                .text(
                 "+++ " + d.placeName + " (" + dateToString(d.date) + ") " +
                 d.partGuess + " Teilnehmer + " + d.eRemarks + " +++")
-                .transition().ease("linear").duration(25000)
-                .attr({x: pos.x[1]}).remove();
+                .transition().ease("linear").duration(durations[0])
+                .attr({x: pos.x[0] - (pos.x[0]-pos.x[1])*durations[0]/durations[1]
+                })
+                .style("opacity", 1)
+                .transition().ease("linear").duration(durations[1])
+                .attr({x: pos.x[1]}).style("opacity", 0).remove();
          }
         };
 
@@ -569,7 +740,6 @@
             r: 0,
             cx: d.pCoords[0],
             cy: d.pCoords[1],
-            fill: "lime",
             opacity: 0
         };
         rMax = Math.max(3, self.scales.rPop(d.partGuess));
@@ -577,7 +747,7 @@
             r : rMax,
             opacity : 1
         };
-        if (this.playing) {
+        if (this.playing || this.endState) {
             self.markerLayer.append("circle")
                 .attr(mAttrStart)
                 .transition().ease("cubic-out").duration(this.frameDurationTarget)
@@ -587,45 +757,40 @@
                 .style({opacity: 0}).remove();
         } else {
             // static markers
+            // hide city labels
             this.svg.selectAll("g").selectAll(".labeltext").classed("hidden",true);
             //
-            g = self.markerLayer.append("g").classed("static",true);
-               g.append("circle")
-                .attr('class', 'static')
+            this.markerLayer
+                .append("circle").classed("static",true)
+                .attr("id", d.placeNameURL)
                 .attr(mAttrStart)
                 .transition().ease("cubic-out").duration(this.frameDurationTarget)
                 .attr(mAttr);
+
             textPos = {
                 x: d.pCoords[0] ,
                 y: d.pCoords[1] - this.layout.lineHeight * 0.6
             };
-            textAnchor ={"text-anchor" : "middle"};
-            textStyle = {
-                "font-size" : this.layout.fontSize + "em",
-                fill: "yellow"
-            };
+            var id =  "marker-" + d.placeNameURL;
+            g = this.markerTextOutLayer.append("g")
+                .classed("static",true)
+                .attr("id", d.placeNameURL);
             g.append("text")
-                .style(textStyle)
-                .attr(textAnchor)
                 .attr(textPos)
                 .text(d.placeName);
             textPos.y += this.layout.lineHeight *0.7;
             if (d.eTypeName !== "kA") {
-                g.append("text")
-                    .style(textStyle)
-                    .attr(textAnchor)
+            g.append("text")
                     .attr(textPos)
                     .text(d.eTypeName);
                 textPos.y += this.layout.lineHeight * 0.7;
             }
             g.append("text")
-                .style(textStyle)
-                .attr(textAnchor)
                 .attr(textPos)
                 .text((d.partUnknown ? "k.A." : d.partMax));
-
-
-        }
+            // reuse g and clone into markerTextLayer;
+            document.getElementsByClassName("markerstext")[0].appendChild(g[0][0].cloneNode(true));
+     }
     };
 
     Vis.prototype.renderMarkers = function(arr){
@@ -642,7 +807,7 @@
         // get base color from css init;
         var options = options || {};
         // todo fix unexpected clipping for brightness behavior;
-        var baseColor = options.baseColor || this.styles.landBaseColor;
+        var baseColor = this.styles.landBaseColor;
         //var ratioValue = options.ratioValue || false;
         var dateString = options.dateString || false;
         var reset = options.reset || false;
@@ -677,37 +842,66 @@
             }
         }
     };
+    Vis.prototype.showList = function(d,markers) {
+        var totals = this.groups.totalsByDay;
+        var desc =  d3.selectAll(".ui").select(".description");
+        var c = totals[d].length;
+        var dStr = dateToLocale(new Date(d),this.options.locale);
+        var str = totals[d].length === 1 ? "Demo" : "Demos";
+        var frm = d3.format("02d");
+        var dFrm = frm(dStr.dayOfMonth) + "." + frm(dStr.month) + ".";
+        var t = totals[d].total;
+        var tn = "Teilnehmer";
+        if (desc.select(".head")[0][0] === null) {
+            var h = desc.append("p").classed("head",true);
+            h.append("span").classed("r1",true).text("Datum");
+            h.append("span").classed("number3",true).text("Anzahl");
+            h.append("span").classed("number6",true).text("Teilnehmer");
+            desc.append("div").classed("list",true);
+        }
+
+        var row =  desc.select(".list").insert("p", ":first-child")
+        var dlink = row.append("a")
+            .attr("href", "#")
+            .attr("onclick","vis.jumpToDate(" + d + ")");
+
+        dlink.append("span").classed("r1",true).text(dFrm);
+        dlink.append("span").classed("number3",true).text(c) ;
+        dlink.append("span").classed("number6",true).text(t);
+        row.style("opacity",1).classed("row",true)
+            .transition().duration(this.defaultFrameDurationTarget * 15)
+            .style("opacity",0.3);
+    }
 
     Vis.prototype.showDate = function(date){
         var d = date;
         if (typeof d === "object") {d = dateToString(d)}
         var markers = this.groups.dateString[d];
         if (markers === undefined) {return false;}
-        var totals = this.groups.totalsByDay;
-        var desc =  d3.selectAll(".ui").select(".description").select("ul");
-        var c = totals[d].length;
-        var dStr = dateToLocale(new Date(d),this.options.locale);
-        var str = totals[d].length === 1 ? "Ereignis" : "Ereignisse";
-        var frm = d3.format("02d");
-        var t = totals[d].total;
-        var spc = " - ";
-        if (c===1) { spc = " ----- ";
-        } else if (c<10) { spc = " --- ";
-        } else if (c<100) { spc = " -- ";}
-        desc.insert("li", ":first-child").append("span")
-            .text(frm(dStr.dayOfMonth) + "." + frm(dStr.month) + ". " +
-            c + " " +  str + spc + t + " Teiln.")
-            .transition().duration(this.defaultFrameDurationTarget * 15).style("opacity",0).remove();
+        // TODO add selection via list;
+        if (this.options.showList) {this.showList(d,markers);}
         this.renderMarkers(markers, this.markerLayer);
         if (this.options.flashDistricts) {this.flashDistricts(this.svg.selectAll(".land"),{dateString :d})}
     };
 
+
+    // TODO fix this function
+    Vis.prototype.jumpToDate = function(d) {
+        if (typeof d === "string") {d = new Date(d);}
+        this.showInterval[d,this.currentDate[1]];
+        this.pause({date: d});
+    };
+
     Vis.prototype.mauerFall = function() {
-        this.svg.selectAll(".staatsgrenze").attr("class", "staatsgrenzeoffen");
+        this.svg.selectAll(".staatsgrenze")
+            .attr("class", "staatsgrenzeoffen")
+            .style(this.styles.staatsGrenzeOffen);
     };
 
     Vis.prototype.mauerReset = function() {
-        this.svg.selectAll(".staatsgrenzeoffen").attr("class", "staatsgrenze");
+        this.svg.selectAll(".staatsgrenzeoffen")
+            .attr("class", "staatsgrenze")
+            .style(this.styles.staatsGrenze);
     };
 
     Vis.prototype.halfSpeed = function() {
@@ -727,11 +921,17 @@
         this.ui.fast_fwd.classed('active', false);
     };
 
-    Vis.prototype.pause = function() {
+    Vis.prototype.pause = function(options) {
+        var options = options || {};
+        var staticView = (options.staticView === undefined) ? true : options.staticView;
+        var flushAll = (options.flushAll === undefined) ? false : options.flushAll;
+        var date = (options.date === undefined) ? this.currentDate : options.date;
         this.playing = false;
-        flushAllD3Transitions
+        if (flushAll) {flushAllD3Transitions();}
         window.clearInterval(this.timer);
+        if (staticView) {
         this.showDate(this.currentDate);
+        }
         this.fastFwdOff();
         this.ui.play.classed('icon-play', true).classed('icon-pause', false);
     };
@@ -769,67 +969,60 @@
     };
 
     Vis.prototype.drawLabels = function() {
-        var textNodes = d3.select("svg").select(".labels");
-        var dots = textNodes.append("g").attr("class","dots");
-        var labels = textNodes.append("g").attr("class","labeltext");
+        var self = this;
+        var dots = this.labelDotsLayer;
+        var labels = this.labelTextLayer;
         var o = this.groups.totalsByPlace;
+        var overRides = this.layout.labelPlacement;
         for(var d in o) {
             var s = {anchor: "start", yOffset: -3.5 * this.unit};
+            var style = {};
             var p = o[d].pop89;
             var n = o[d].placeName;
-            var supressNames = [
-                "Rostock-Warnemünde",
-                "Rostock-Gehlsdorf",
-                "Berlin-Köpenick",
-                "Berlin-Staaken",
-                "Berlin-Dahlwitz-Hoppegarten",
-                "Berlin-Kaulsdorf",
-                "Halle-Neustadt"
-            ];
-            var alignLeft = ["Potsdam","Gotha"];
-            var alignBelow = ["Zwickau","Weimar"];
-            var alignCenter = ["Erfurt","Weimar","Karl-Marx-Stadt","Magdeburg"];
-            if (supressNames.indexOf(n) > -1) {continue;}
+            if (overRides.supressNames.indexOf(n) > -1) {continue;}
             if ((this.width <= this.minHeight || this.height <= this.minHeight) && p < 100000) {continue;}
-            if (alignLeft.indexOf(n) > -1) {s.anchor = "end";}
-            if (alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
-            if (alignBelow.indexOf(n) > -1) {s.yOffset = 6 * this.unit;}
-
-            switch (true) {
-                case (p < 10000) :  s.class = "smaller10k";s.r = 0.8;s.size = 1;s.showLabel= false; break;
-                case (p < 50000) :  s.class = "pl10kto50k";s.r = 1.3;s.size = 1.2;s.showLabel= false; break;
-                case (p < 100000) : s.class = "pl50kto100k";s.r = 1.6;s.size = 1.2;s.showLabel= true; break;
-                case (p < 300000) : s.class = "pl100kto300k";s.r = 2;s.size = 1.4;s.showLabel= true; break;
-                case (p < 700000) : s.class = "pl300kto700k";s.r = 2.3;s.size = 1.5;s.showLabel= true; break;
-                default :           s.class = "plus700k";s.r = 4;s.size = 1.66;s.showLabel= true; break;
-            }
-            var dot = dots;
+            if (overRides.alignLeft.indexOf(n) > -1) {s.anchor = "end";}
+            if (overRides.alignCenter.indexOf(n) > -1) {s.anchor = "middle";}
+            if (overRides.alignBelow.indexOf(n) > -1) {s.yOffset = 6 * this.unit;}
+            this.layout.labelClasses.forEach( function(d) {
+                if (p >= d.range[0] && p<= d.range[1]) {
+                    s.class = d.className;
+                    s.r = d.r;
+                    s.size = d.fs;
+                    s.showLabel = d.showLabel;
+                    style.dot = self.styles.label.dots[d.dotStyle] || {};
+                    style.text = self.styles.label.text[d.text] || {};
+                }
+            });
+           var link,dot = dots;
             if (this.options.linkABL) {
+                link = this.ablBaseURL + "?Bezirk=" + o[d].bezirkSafe + "&ort=" + o[d].placeNameURL;
                 dot = dot.append("a").attr({
-                    "xlink:href": this.ablBaseURL +
-                    "?Bezirk=" + o[d].bezirkSafe + "&ort=" + o[d].placeNameURL,
+                    "xlink:href": link,
                     "target": "blank"
                 });
             }
             dot.append("circle").attr("class", s.class)
                 .attr({
+                    id: o[d].placeNameURL,
                     title: o[d].placeName,
                     cx: o[d].pCoords[0],
                     cy: o[d].pCoords[1],
                     r: s.r * this.unit
-                });
+                })
+                .style(style.dot);
             if (s.showLabel) {
                 labels.append("text")
-                    .attr({"class": s.class})
-                    .attr({"text-anchor": s.anchor})
                     .attr({
+                        "id": o[d].placeNameURL,
+                        "class": s.class,
+                        "text-anchor": s.anchor,
                         x: o[d].pCoords[0] ,
                         y: o[d].pCoords[1] + s.yOffset
                     })
+                    .style(style.text)
                     .style({
-                        "font-size": Math.min(s.size * this.layout.fontSize) + "em",
-                        "fill": "white",
-                        "font-family": "sans-serif"
+                        "font-size": Math.min(s.size * this.layout.fontSize) + "em"
                     })
                     .text(n);
             }
