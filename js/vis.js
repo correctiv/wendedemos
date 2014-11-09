@@ -14,7 +14,7 @@
     function dateToString(d) {
         var format = d3.format("02d");
         var monthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
-         return d.getFullYear() + "-" + format(d.getMonth() +1) + "-" + format(d.getDate());
+         return d.getFullYear() + "-" + format(d.getMonth() +1) + "-" + format(d.getDate() +1);
 
     }
 
