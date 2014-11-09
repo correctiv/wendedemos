@@ -398,6 +398,18 @@
         // declare styles as high up as possible, or assign to groups if needed,
         // not to individual elements, whens styles are the same
 
+        // todo add layer management
+        // Add ticker in back
+        this.tickerLayer = this.svg.append("g")
+            .attr("class", "ticker")
+            .style({
+                fill: this.styles.tickerColor,
+                stroke: "none",
+                "font-family": "monospace",
+                "font-size": this.layout.fontSize * 1.5 + "em",
+                "text-anchor": "start"
+            });
+
         // breaks in chrome fullscreen
         var grid = this.svg.append("g")
             .classed("graticule", true);
@@ -517,18 +529,6 @@
                 "font-size": fs,
                 "text-anchor": "middle"
             });
-
-
-        // Add tickerlayer on top
-        this.tickerLayer = this.svg.append("g")
-            .attr("class", "ticker")
-            .style({
-                fill: this.styles.tickerColor,
-                stroke: "none",
-                "font-family": "monospace",
-                "font-size": this.layout.fontSize * 1.5 + "em",
-                "text-anchor": "start"
-        });
 
         var legendOffset = [this.width * 6/7,this.height * 1/6];
         var maxR = this.scales.rPop(100000);
